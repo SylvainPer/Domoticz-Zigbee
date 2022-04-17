@@ -937,8 +937,11 @@ def checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID):
         self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
 
 
-def checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, Value):
-
+def checkAndStoreAttributeValue(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, Value, Value2 = None):
+    if Value2 and Value2 != 'None':
+        if Value != Value2:
+            self.logging.log('Cluster','Error','NOK %s != %s / Ep:%s Cluster:%s Attr:%s'%(Value,Value2,MsgSrcEp,MsgClusterId,MsgAttrID),MsgAttrID)
+       
     checkAttribute(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID)
 
     self.ListOfDevices[MsgSrcAddr]["Ep"][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
