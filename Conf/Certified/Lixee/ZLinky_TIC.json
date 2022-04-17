@@ -226,5 +226,12 @@
 	"PollingEnabled": 1,
 	"Param": {
 		"PollingCusterff66": 3600
+	},
+	"data_conversion":{
+		"0702":{
+			"0000": { "type" : [], "text" : "ZLinky_TIC", "unit" : "Wh", "widget" : []},
+			"0100": { "type" : [], "text" : "ZLinky_TIC", "unit" : "Wh", "widget" : [], "exc_cond" : {"0":"len(str(value))==0"}},
+			"0102": { "type" : [], "text" : "ZLinky_TIC", "unit" : "Wh", "widget" : [], "exc_cond" : {"0":"value==0"}}
+		}
 	}
 }
