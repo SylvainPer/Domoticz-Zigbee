@@ -15,12 +15,20 @@ from Modules.domoTools import (RetreiveSignalLvlBattery,
 from Modules.widgets import SWITCH_LVL_MATRIX
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 
-
-def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_=""):
+def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_="", Color_="", value2 = None):
     """
     MajDomoDevice
     Update domoticz device accordingly to Type found in EP and value/Color provided
     """
+
+    if value2 != None and value != value2:
+        self.log.logging(
+            "Widget",
+            "Error",
+            "MajDomoDevice value2 calc NOK : %s vs %s / NWKID : %s Ep: %s clusterID %s attr %s" 
+                %(value, value2, NWKID, Ep, clusterID, Attribute_),
+            NWKID,
+        )
 
     # Sanity Checks
     if NWKID not in self.ListOfDevices:
