@@ -186,6 +186,12 @@ class WebServer(object):
         
         self.DomoticzMajor = DomoticzMajor
         self.DomoticzMinor = DomoticzMinor
+        
+        self.server_thread = None
+        self.client_threads = []
+        self.running = None
+        self.clients = {}
+        
 
         # httpPort could have 2 formats. port number only or IP:port
         if ':' in httpPort:
@@ -854,10 +860,9 @@ class WebServer(object):
                     del self.IEEE2NWK[ieee]
 
                 # for a remove in case device didn't send the leave
-                if "IEEE" in self.ControllerData and ieee:
+                if ieee and "IEEE" in self.ControllerData and self.zigbee_communication == "native":
                     # uParrentAddress + uChildAddress (uint64)
-                    if self.zigbee_communication == "native":
-                        sendZigateCmd(self, "0026", self.ControllerData["IEEE"] + ieee)
+                    sendZigateCmd(self, "0026", self.ControllerData["IEEE"] + ieee)
 
                 action = {"Name": "Device %s/%s removed" % (nwkid, ieee)}
                 _response["Data"] = json.dumps(action, sort_keys=True)
@@ -1179,7 +1184,7 @@ class WebServer(object):
             elif len(parameters) == 1:
                 device_infos = {
                     "PluginInfos": get_plugin_parameters(self, filter=True),
-                    "Analytics": self.pluginconf.pluginConf["PluginAnalytics"]
+                    "Analytics": 0
                 }
                 if parameters[0] in self.ListOfDevices:
                     device_infos["Device"] = self.ListOfDevices[parameters[0]]
