@@ -324,7 +324,11 @@ def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
 
 
 def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
-    if self.HBcount < count:
+    # In case count = -1 we request to force a write also on the Domoticz Database (when onStop is called)
+    # When count = 0 we force a write
+
+    self.log.logging("Database", "Log", "WriteDeviceList %s %s" %(self.HBcount, count))
+    if count != -1 and self.HBcount < count:
         self.HBcount = self.HBcount + 1
         return
 
@@ -334,15 +338,9 @@ def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
             self.pluginconf.pluginConf["pluginData"], self.DeviceListName))
         return
 
-    if self.pluginconf.pluginConf["expJsonDatabase"]:
-        _write_DeviceList_json(self)
-
     _write_DeviceList_txt(self)
 
-    if (
-        Modules.tools.is_domoticz_db_available(self) 
-        and ( self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]) 
-    ):
+    if ( count == -1 and ( self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"])  ):
         if _write_DeviceList_Domoticz(self) is None:
             # An error occured. Probably Dz.Configuration() is not available.
             _write_DeviceList_txt(self)
@@ -384,21 +382,37 @@ def _write_DeviceList_txt(self):
         self.log.logging( "Database", "Error", "Error while Writing plugin Database %s" % _DeviceListFileName)
 
 
-def _write_DeviceList_json(self):
-    _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
-# Incorrect error issue    
-#    _DeviceListFileName = _pluginData / self.DeviceListName[:-3] + "json"
-    _DeviceListFileName = _pluginData / (self.DeviceListName[:-3] + "json")
-    self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
-    with open(_DeviceListFileName, "wt") as file:
-        json.dump(self.ListOfDevices, file, sort_keys=True, indent=2)
-    self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
-
-
 def _write_DeviceList_Domoticz(self):
     ListOfDevices_for_save = self.ListOfDevices.copy()
-    self.log.logging("Database", "Log", "WriteDeviceList - flush Plugin db to %s" % "Domoticz")
+    self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % "Domoticz Sqlite Db")
+    self.log.logging("Database", "Status", "+ Saving plugin database into Domoticz")
+
     return setConfigItem( Key="ListOfDevices", Attribute="Devices", Value={"TimeStamp": time.time(), "Devices": ListOfDevices_for_save} )
+
+
+def write_coordinator_backup_domoticz(self, coordinator_backup):
+    self.log.logging("Database", "Log", "write_coordinator_backup_domoticz - saving coordinator data to Domoticz Sqlite Db type: %s" %type(coordinator_backup))
+    self.log.logging("Database", "Status", "+ Saving Coordinator database into Domoticz")
+
+    return setConfigItem( Key="CoordinatorBackup", Attribute="NetworkBackup", Value={"TimeStamp": time.time(), "NetworkBackup": coordinator_backup } )
+
+
+def read_coordinator_backup_domoticz(self):
+
+    coordinator_backup = getConfigItem(Key="CoordinatorBackup", Attribute="NetworkBackup")
+    self.log.logging( "Database", "Debug", "Coordinator backup entry from Domoticz %s" % str(coordinator_backup))
+
+    time_stamp = coordinator_backup["TimeStamp"] if "TimeStamp" in coordinator_backup else 0
+    coordinator_network_backup = coordinator_backup["NetworkBackup"] if "NetworkBackup" in coordinator_backup else None
+
+    self.log.logging( "Database", "Debug", "Coordinator data found on DZ with date %s" % (
+        time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))), )
+
+    if coordinator_network_backup:
+        self.log.logging( "Database", "Debug", "Load from Dz: %s %s %s" % (
+            len(coordinator_network_backup), str(coordinator_network_backup), type(coordinator_network_backup) ))
+
+    return (coordinator_network_backup, time_stamp)
 
 
 def importDeviceConf(self):

@@ -15,6 +15,9 @@ import os.path
 from pathlib import Path
 
 import Modules.tools
+from Modules.database import (is_domoticz_recent,
+                              read_coordinator_backup_domoticz,
+                              write_coordinator_backup_domoticz)
 
 
 def handle_zigpy_backup(self, backup):
@@ -47,12 +50,35 @@ def handle_zigpy_retreive_last_backup( self ):
     if not os.path.exists(_coordinator_backup):
         return None
 
+    file_latest_coordinator_backup_record = None
+        
     with open(_coordinator_backup, "r") as _coordinator:
         self.log.logging("TransportZigpy", "Debug", "Open : %s" % _coordinator_backup)
         try:
-            return json.load(_coordinator)
-        except json.JSONDecodeError:
+            file_latest_coordinator_backup_record = json.load(_coordinator)
+        except (json.JSONDecodeError, Exception):
+            file_latest_coordinator_backup_record = None
+    
+    if (self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]):
+        # Read the most recent coordinator backup from Domoticz Db
+        latest_coordinator_backup = read_coordinator_backup_domoticz(self)
+        self.log.logging("TransportZigpy", "Debug", "handle_zigpy_retreive_last_backup - Retreive latest_coordinator_backup %s (%s)" %(
+            str(latest_coordinator_backup), type(latest_coordinator_backup)))
+
+        dz_latest_coordinator_backup_record, dz_latest_coordinator_backup_timestamp = latest_coordinator_backup
+        if dz_latest_coordinator_backup_record is None:
             return None
-        except Exception:
-            return None
-    return None
+
+        if isinstance(dz_latest_coordinator_backup_record, str):
+            dz_latest_coordinator_backup_record = json.loads(dz_latest_coordinator_backup_record)
+
+        self.log.logging("TransportZigpy", "Debug", "handle_zigpy_retreive_last_backup - Retreive latest Coordinator data from Domoticz : (%s) %s" %(
+            type(dz_latest_coordinator_backup_record),dz_latest_coordinator_backup_record))
+
+        self.log.logging( "Database", "Debug", "Coordinator Backup from Dz is recent: %s " % (
+            is_domoticz_recent(self, dz_latest_coordinator_backup_timestamp, _coordinator_backup) ))
+
+        self.log.logging("TransportZigpy", "Log", "==> Sanity check : Domoticz Coordinator Backup versus File Backup equal : %s" % (
+            file_latest_coordinator_backup_record == dz_latest_coordinator_backup_record))
+
+    return file_latest_coordinator_backup_record
