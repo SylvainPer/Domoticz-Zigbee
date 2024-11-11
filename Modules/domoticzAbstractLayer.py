@@ -139,7 +139,7 @@ def prepare_dict_for_storage(dict_items, Attribute):
             domoticz_error_api(f"Error during JSON serialization: {e} for data {dict_items[Attribute]}")
             return {}
 
-    dict_items["Version"] = 2
+    dict_items["Version"] = 3
     return dict_items
 
 
@@ -162,15 +162,16 @@ def repair_dict_after_load(b64_dict, Attribute):
         return {}
 
     if b64_dict["Version"] == 1:
-        _repair_dict_after_loadV1(b64_dict, Attribute)
-    elif b64_dict["Version"] == 2:
-        _repair_dict_after_loadV2(b64_dict, Attribute)
+        return _repair_dict_after_loadV1(b64_dict, Attribute)
+
+    elif b64_dict["Version"] == 3:
+        return _repair_dict_after_loadV3(b64_dict, Attribute)
     
-    domoticz_error_api(f"Unknown version number: {b64_dict['Version']}")
+    domoticz_error_api(f"repair_dict_after_load - Unknown version number: {b64_dict['Version']} ({type(b64_dict['Version'])})")
     return {}
 
 
-def _repair_dict_after_loadV2(b64_dict, Attribute):
+def _repair_dict_after_loadV3(b64_dict, Attribute):
     if Attribute not in b64_dict:
         domoticz_error_api(f"_repair_dict_after_loadV2 - {Attribute} not found in {b64_dict} ")
         return {}
