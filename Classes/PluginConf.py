@@ -529,7 +529,7 @@ class PluginConf:
 
         if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDatabase"] or self.pluginConf["storeDomoticzDatabase"]):
             Domoticz.Status("+ Saving Plugin Configuration into Domoticz")
-            setConfigItem(Key="PluginConf", Attribute="b64Settings", Value={"TimeStamp": time.time(), "b64Settings": write_pluginConf})
+            setConfigItem(Key="PluginConf", Attribute="b64encoded", Value={"TimeStamp": time.time(), "b64encoded": write_pluginConf})
 
 
 
@@ -541,10 +541,10 @@ def _load_Settings(self):
 
     dz_timestamp = 0
     if is_domoticz_db_available(self):
-        _domoticz_pluginConf = getConfigItem(Key="PluginConf", Attribute="b64Settings")
+        _domoticz_pluginConf = getConfigItem(Key="PluginConf", Attribute="b64encoded")
         if "TimeStamp" in _domoticz_pluginConf:
             dz_timestamp = _domoticz_pluginConf["TimeStamp"]
-            _domoticz_pluginConf = _domoticz_pluginConf["b64Settings"]
+            _domoticz_pluginConf = _domoticz_pluginConf["b64encoded"]
             Domoticz.Log(
                 "Plugin data loaded where saved on %s"
                 % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp)))
