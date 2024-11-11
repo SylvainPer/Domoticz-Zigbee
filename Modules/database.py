@@ -317,7 +317,7 @@ def save_plugin_database(self, count):  # sourcery skip: merge-nested-ifs
     # In case count = -1 we request to force a write also on the Domoticz Database (when onStop is called)
     # When count = 0 we force a write
 
-    self.log.logging("Database", "Log", "save_plugin_database %s %s" %(self.HBcount, count))
+    self.log.logging("Database", "Debug", "save_plugin_database %s %s" %(self.HBcount, count))
     if count != -1 and self.HBcount < count:
         self.HBcount = self.HBcount + 1
         return
