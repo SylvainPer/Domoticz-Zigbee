@@ -11,9 +11,9 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 import json
+
 from Classes.WebServer.headerResponse import (prepResponseMessage,
                                               setupHeadersResponse)
-
 
 # curl  http://127.0.0.1:9440/rest-zigate/1/non-optimized-device-configuration/xyxz
 
