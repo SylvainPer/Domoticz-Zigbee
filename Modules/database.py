@@ -142,41 +142,35 @@ MANUFACTURER_ATTRIBUTES = (
     )
 
 
-def LoadDeviceList(self):
+def load_plugin_database(self):
     # Load DeviceList.txt into ListOfDevices
     #
-    ListOfDevices_from_Domoticz = None
+    ListOfDevices_imported_from_Domoticz = None
+    list_of_device_txt_filename = Path( self.pluginconf.pluginConf["pluginData"] ) / self.DeviceListName
 
-    # This can be enabled only with Domoticz version 2021.1 build 1395 and above, otherwise big memory leak
-
-    if self.pluginconf.pluginConf["useDomoticzDatabase"] and Modules.tools.is_domoticz_db_available(self):
-        ListOfDevices_from_Domoticz, saving_time = _read_DeviceList_Domoticz(self)
-        self.log.logging(
-            "Database",
-            "Debug",
-            "Database from Dz is recent: %s Loading from Domoticz Db"
-            % is_domoticz_recent(self, saving_time, self.pluginconf.pluginConf["pluginData"] + self.DeviceListName)
-        )
+    if self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]:
+        ListOfDevices_imported_from_Domoticz, saving_time = load_plugin_database_from_domoticz(self)
+        backup_domoticz_more_recent = is_timestamp_recent_than_filename(self, saving_time, list_of_device_txt_filename )
+        self.log.logging( "Database", "Debug", "Database from Dz is recent: %s Loading from Domoticz Db" % backup_domoticz_more_recent)
         res = "Success"
 
-    _pluginConf = Path( self.pluginconf.pluginConf["pluginData"] )
-    _DeviceListFileName = _pluginConf / self.DeviceListName
-    if os.path.isfile(_DeviceListFileName):
-        res = loadTxtDatabase(self, _DeviceListFileName)
-    else:
-        # Do not exist
+    if not os.path.isfile(list_of_device_txt_filename):
         self.ListOfDevices = {}
-        return True
+        if not self.pluginconf.pluginConf["useDomoticzDatabase"]:
+            return True
 
-    self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), _DeviceListFileName))
-    if ListOfDevices_from_Domoticz:
-        self.log.logging( "Database", "Log", "Plugin Database loaded - BUT NOT USE - from Dz: %s from DeviceList: %s, checking deltas " % ( len(ListOfDevices_from_Domoticz), len(self.ListOfDevices), ), )
+    res = load_plugin_database_txt_format(self, list_of_device_txt_filename)
+    self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), list_of_device_txt_filename))
 
-    self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % _DeviceListFileName)
-    Modules.tools.helper_versionFile(_DeviceListFileName, self.pluginconf.pluginConf["numDeviceListVersion"])
+    if ListOfDevices_imported_from_Domoticz:
+        self.log.logging( "Database", "Log", "Sanity check. Plugin database loaded from Domoticz. %s from domoticz, %s from txt file" % (
+            len(ListOfDevices_imported_from_Domoticz), len(self.ListOfDevices), ), )
+
+    self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % list_of_device_txt_filename)
+    Modules.tools.helper_versionFile(list_of_device_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
 
     # Keep the Size of the DeviceList in order to check changes
-    self.DeviceListSize = os.path.getsize(_DeviceListFileName)
+    self.DeviceListSize = os.path.getsize(list_of_device_txt_filename)
 
     cleanup_table_entries( self)
 
@@ -242,7 +236,9 @@ def LoadDeviceList(self):
     return res
 
 
-def loadTxtDatabase(self, dbName):
+def load_plugin_database_txt_format(self, dbName):
+    """ Load the plugin databqse from .txt format into self.ListOfDevices """
+
     res = "Success"
     with open(dbName, "r", encoding='utf-8') as myfile2:
         self.log.logging("Database", "Debug", "Open : %s" % dbName)
@@ -275,135 +271,129 @@ def loadTxtDatabase(self, dbName):
                 continue
             else:
                 nb += 1
-                CheckDeviceList(self, key, val)
+                load_plugin_database_txt_entry(self, key, val)
     return res
 
 
-def _read_DeviceList_Domoticz(self):
+def load_plugin_database_from_domoticz(self):
+    """ Load plugin databse from Domoticz return a tuple dictionary and backup timestamp"""
 
-    ListOfDevices_from_Domoticz = getConfigItem(Key="ListOfDevices", Attribute="Devices")
-    time_stamp = 0
-    if "TimeStamp" in ListOfDevices_from_Domoticz:
-        time_stamp = ListOfDevices_from_Domoticz["TimeStamp"]
-        ListOfDevices_from_Domoticz = ListOfDevices_from_Domoticz["Devices"]
-        self.log.logging(
-            "Database",
-            "Log",
-            "Plugin data found on DZ with date %s"
-            % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))),
-        )
+    configuration_entry_imported_from_Domoticz = getConfigItem(Key="ListOfDevices", Attribute="b64encoded")
+    self.log.logging( "Database", "Debug", f"-- load_plugin_database_from_domoticz loaded {str((configuration_entry_imported_from_Domoticz))}" )
 
-    self.log.logging(
-        "Database", "Debug", "Load from Dz: %s %s" % (len(ListOfDevices_from_Domoticz), ListOfDevices_from_Domoticz)
-    )
-    if not isinstance(ListOfDevices_from_Domoticz, dict):
-        ListOfDevices_from_Domoticz = {}
-    else:
-        for x in list(ListOfDevices_from_Domoticz):
-            self.log.logging("Database", "Debug", "--- Loading %s" % (x))
-            
-            for attribute in list(ListOfDevices_from_Domoticz[x]):
-                if attribute not in (MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES):
-                    self.log.logging("Database", "Debug", "xxx Removing attribute: %s for %s" % (attribute, x))
-                    del ListOfDevices_from_Domoticz[x][attribute]
+    time_stamp = configuration_entry_imported_from_Domoticz.get("TimeStamp", 0)
+    listofdevices_imported_from_domoticz = configuration_entry_imported_from_Domoticz.get( "b64encoded", {})
 
-    return (ListOfDevices_from_Domoticz, time_stamp)
+    if not isinstance(listofdevices_imported_from_domoticz, dict):
+        listofdevices_imported_from_domoticz = {}
+
+    self.log.logging( "Database", "Log", f"-- load_plugin_database_from_domoticz loaded {len(listofdevices_imported_from_domoticz)} from {(time.strftime('%A, %Y-%m-%d %H:%M:%S', time.localtime(time_stamp)))}" )
+
+    # dictionary cleanup
+    for x in list(listofdevices_imported_from_domoticz):
+        self.log.logging("Database", "Debug", "--- Loading %s" % (x))
+
+        for attribute in list(listofdevices_imported_from_domoticz[x]):
+            if attribute not in (MANDATORY_ATTRIBUTES + MANUFACTURER_ATTRIBUTES + BUILD_ATTRIBUTES):
+                self.log.logging("Database", "Debug", "xxx Removing attribute: %s for %s" % (attribute, x))
+                del listofdevices_imported_from_domoticz[x][attribute]
+
+    return (listofdevices_imported_from_domoticz, time_stamp)
 
 
-def is_domoticz_recent(self, dz_timestamp, device_list_txt_filename):
+def is_timestamp_recent_than_filename(self, dz_timestamp, device_list_txt_filename):
+    # Get the timestamp of the text file if it exists, else default to 0
+    txt_timestamp = os.path.getmtime(device_list_txt_filename) if os.path.isfile(device_list_txt_filename) else 0
 
-    txt_timestamp = 0
-    if os.path.isfile(device_list_txt_filename):
-        txt_timestamp = os.path.getmtime(device_list_txt_filename)
-
-    self.log.logging("Database", "Log", "%s timestamp is %s" % (device_list_txt_filename, txt_timestamp))
+    # Log only when dz_timestamp is more recent than txt_timestamp
     if dz_timestamp > txt_timestamp:
-        self.log.logging("Database", "Log", "Dz is more recent than Txt Dz: %s Txt: %s" % (dz_timestamp, txt_timestamp))
+        self.log.logging("Database", "Log", f"{device_list_txt_filename} timestamp: {txt_timestamp}")
+        self.log.logging("Database", "Log", f"Dz timestamp {dz_timestamp} is more recent than Txt timestamp {txt_timestamp}")
         return True
     return False
 
 
-def WriteDeviceList(self, count):  # sourcery skip: merge-nested-ifs
+def save_plugin_database(self, count):  # sourcery skip: merge-nested-ifs
     # In case count = -1 we request to force a write also on the Domoticz Database (when onStop is called)
     # When count = 0 we force a write
 
-    self.log.logging("Database", "Log", "WriteDeviceList %s %s" %(self.HBcount, count))
+    self.log.logging("Database", "Log", "save_plugin_database %s %s" %(self.HBcount, count))
     if count != -1 and self.HBcount < count:
         self.HBcount = self.HBcount + 1
         return
 
-    self.log.logging("Database", "Debug", "WriteDeviceList %s %s" %(self.HBcount, count))
     if self.pluginconf.pluginConf["pluginData"] is None or self.DeviceListName is None:
-        self.log.logging("Database", "Error", "WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" % (
+        self.log.logging("Database", "Error", "save_plugin_database - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" % (
             self.pluginconf.pluginConf["pluginData"], self.DeviceListName))
         return
 
-    _write_DeviceList_txt(self)
+    save_plugin_database_txt_format(self)
 
     if ( count == -1 and ( self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"])  ):
-        if _write_DeviceList_Domoticz(self) is None:
+        if save_plugin_database_into_domoticz(self) is None:
             # An error occured. Probably Dz.Configuration() is not available.
-            _write_DeviceList_txt(self)
+            save_plugin_database_txt_format(self)
 
     self.HBcount = 0
 
 
-def _write_DeviceList_txt(self):
+def save_plugin_database_txt_format(self):
     # Write in classic format ( .txt )
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
     _DeviceListFileName = _pluginData / self.DeviceListName
     try:
-        self.log.logging("Database", "Debug", "Write %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
+        self.log.logging("Database", "Debug", "save_plugin_database_txt_format %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
         with open(_DeviceListFileName, "wt", encoding='utf-8') as file:
             for key in self.ListOfDevices:
                 try:
                     file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
                     
                 except UnicodeEncodeError:
-                    self.log.logging( "Database", "Error", "UnicodeEncodeError while while saving %s : %s on file" %( 
+                    self.log.logging( "Database", "Error", "save_plugin_database_txt_format UnicodeEncodeError while while saving %s : %s on file" %(
                         key, self.ListOfDevices[key]))
                     continue
 
                 except ValueError:
-                    self.log.logging( "Database", "Error", "ValueError while saving %s : %s on file" %( 
+                    self.log.logging( "Database", "Error", "save_plugin_database_txt_format ValueError while saving %s : %s on file" %(
                         key, self.ListOfDevices[key]))
                     continue
                 
                 except IOError:
-                    self.log.logging( "Database", "Error", "IOError while writing to plugin Database %s" % _DeviceListFileName)
+                    self.log.logging( "Database", "Error", "save_plugin_database_txt_format IOError while writing to plugin Database %s" % _DeviceListFileName)
                     continue
 
-        self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % _DeviceListFileName)
+        self.log.logging("Database", "Debug", "save_plugin_database_txt_format - flush Plugin db to %s" % _DeviceListFileName)
         
     except FileNotFoundError:
-        self.log.logging( "Database", "Error", "WriteDeviceList - File not found >%s<" %_DeviceListFileName)
+        self.log.logging( "Database", "Error", "save_plugin_database_txt_format - File not found >%s<" %_DeviceListFileName)
         
     except IOError:
-        self.log.logging( "Database", "Error", "Error while Writing plugin Database %s" % _DeviceListFileName)
+        self.log.logging( "Database", "Error", "save_plugin_database_txt_format Error while Writing plugin Database %s" % _DeviceListFileName)
 
 
-def _write_DeviceList_Domoticz(self):
-    ListOfDevices_for_save = self.ListOfDevices.copy()
-    self.log.logging("Database", "Debug", "WriteDeviceList - flush Plugin db to %s" % "Domoticz Sqlite Db")
+def save_plugin_database_into_domoticz(self):
     self.log.logging("Database", "Status", "+ Saving plugin database into Domoticz")
 
-    return setConfigItem( Key="ListOfDevices", Attribute="Devices", Value={"TimeStamp": time.time(), "Devices": ListOfDevices_for_save} )
+    plugin_dictionnary = self.ListOfDevices.copy()
+    self.log.logging("Database", "Log", f"save_plugin_database_into_domoticz - dumping {len(plugin_dictionnary)} entry in Domoticz Configuration" )
+
+    return setConfigItem( Key="ListOfDevices", Attribute="b64encoded", Value={"TimeStamp": time.time(), "b64encoded": plugin_dictionnary} )
 
 
 def write_coordinator_backup_domoticz(self, coordinator_backup):
     self.log.logging("Database", "Log", "write_coordinator_backup_domoticz - saving coordinator data to Domoticz Sqlite Db type: %s" %type(coordinator_backup))
     self.log.logging("Database", "Status", "+ Saving Coordinator database into Domoticz")
 
-    return setConfigItem( Key="CoordinatorBackup", Attribute="NetworkBackup", Value={"TimeStamp": time.time(), "NetworkBackup": coordinator_backup } )
+    return setConfigItem( Key="CoordinatorBackup", Attribute="b64encoded", Value={"TimeStamp": time.time(), "b64encoded": coordinator_backup } )
 
 
 def read_coordinator_backup_domoticz(self):
 
-    coordinator_backup = getConfigItem(Key="CoordinatorBackup", Attribute="NetworkBackup")
+    coordinator_backup = getConfigItem(Key="CoordinatorBackup", Attribute="b64encoded")
     self.log.logging( "Database", "Debug", "Coordinator backup entry from Domoticz %s" % str(coordinator_backup))
 
     time_stamp = coordinator_backup["TimeStamp"] if "TimeStamp" in coordinator_backup else 0
-    coordinator_network_backup = coordinator_backup["NetworkBackup"] if "NetworkBackup" in coordinator_backup else None
+    coordinator_network_backup = coordinator_backup["b64encoded"] if "b64encoded" in coordinator_backup else None
 
     self.log.logging( "Database", "Debug", "Coordinator data found on DZ with date %s" % (
         time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(time_stamp))), )
@@ -515,7 +505,7 @@ def checkListOfDevice2Devices(self, Devices):
             continue
 
         if device_id not in self.IEEE2NWK:
-            self.log.logging("Database", "Log", f"checkListOfDevice2Devices - {widget_name} not found in the plugin!")
+            self.log.logging("Database", "Log", f"Domoticz widget: '{widget_name}' not found in the plugin database!")
             continue
 
         nwkid = self.IEEE2NWK[device_id]
@@ -536,13 +526,13 @@ def saveZigateNetworkData(self, nkwdata):
         self.log.logging("Database", "Error", "Error while writing Zigate Network Details%s" % json_filename)
 
 
-def CheckDeviceList(self, key, val):
+def load_plugin_database_txt_entry(self, key, val):
     """
     This function is call during DeviceList load
     """
 
-    self.log.logging("Database", "Debug", "CheckDeviceList - Address search : " + str(key), key)
-    self.log.logging("Database", "Debug2", "CheckDeviceList - with value : " + str(val), key)
+    self.log.logging("Database", "Debug", "load_plugin_database_txt_entry - Address search : " + str(key), key)
+    self.log.logging("Database", "Debug2", "load_plugin_database_txt_entry - with value : " + str(val), key)
 
     DeviceListVal = eval(val)
     # Do not load Devices in State == 'unknown' or 'left'
@@ -557,7 +547,7 @@ def CheckDeviceList(self, key, val):
 
     if key in self.ListOfDevices:
         # Suspect
-        self.log.logging("Database", "Error", "CheckDeviceList - Object %s already in the plugin Db !!!" % key)
+        self.log.logging("Database", "Error", "load_plugin_database_txt_entry - Object %s already in the plugin Db !!!" % key)
         return
 
     if Modules.tools.DeviceExist(self, key, DeviceListVal.get("IEEE", "")):
@@ -581,13 +571,13 @@ def CheckDeviceList(self, key, val):
     elif key == "0000":
         # Reduce the number of Attributes loaded for Zigate
         self.log.logging(
-            "Database", "Debug", "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" % DeviceListVal["IEEE"]
+            "Database", "Debug", "load_plugin_database_txt_entry - Zigate (IEEE)  = %s Load Zigate Attributes" % DeviceListVal["IEEE"]
         )
         IMPORT_ATTRIBUTES = list(set(CIE_ATTRIBUTES))
         self.log.logging("Database", "Debug", "--> Attributes loaded: %s" % IMPORT_ATTRIBUTES)
     else:
         self.log.logging(
-            "Database", "Debug", "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" % DeviceListVal["IEEE"]
+            "Database", "Debug", "load_plugin_database_txt_entry - DeviceID (IEEE)  = %s Load Full Attributes" % DeviceListVal["IEEE"]
         )
         IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES + MANUFACTURER_ATTRIBUTES))
 
@@ -617,7 +607,7 @@ def CheckDeviceList(self, key, val):
         self.log.logging(
             "Database",
             "Debug",
-            "CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal["IEEE"]) + " for NetworkID = " + str(key),
+            "load_plugin_database_txt_entry - DeviceID (IEEE)  = " + str(DeviceListVal["IEEE"]) + " for NetworkID = " + str(key),
             key,
         )
         if DeviceListVal["IEEE"]:
@@ -627,7 +617,7 @@ def CheckDeviceList(self, key, val):
             self.log.logging(
                 "Database",
                 "Log",
-                "CheckDeviceList - IEEE = " + str(DeviceListVal["IEEE"]) + " for NWKID = " + str(key),
+                "load_plugin_database_txt_entry - IEEE = " + str(DeviceListVal["IEEE"]) + " for NWKID = " + str(key),
                 key,
             )
 
