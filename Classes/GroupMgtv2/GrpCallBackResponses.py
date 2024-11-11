@@ -1,20 +1,21 @@
-# !/usr/bin/env python3
-# coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #
-# Author: pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
+from Classes.GroupMgtv2.GrpDatabase import (add_device_to_group, create_group,
+                                            remove_device_from_group,
+                                            write_groups_list)
 from Classes.GroupMgtv2.GrpDomoticz import (
-    create_domoticz_group_device,
-    remove_domoticz_group_device,
-    update_domoticz_group_device,
-    update_domoticz_group_device_widget,
-)
-from Classes.GroupMgtv2.GrpDatabase import (
-    write_groups_list,
-    create_group,
-    add_device_to_group,
-    remove_device_from_group,
-)
+    create_domoticz_group_device, remove_domoticz_group_device,
+    update_domoticz_group_device, update_domoticz_group_device_widget)
 
 
 def checkToCreateOrUpdateGroup(self, NwkId, Ep, GroupId):

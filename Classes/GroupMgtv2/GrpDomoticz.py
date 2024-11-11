@@ -18,8 +18,8 @@ from Classes.GroupMgtv2.GrpDatabase import update_due_to_nwk_id_change
 from Modules.domoticzAbstractLayer import (
     FreeUnit, domo_create_api, domo_delete_widget, domo_read_Name,
     domo_read_nValue_sValue, domo_read_SwitchType_SubType_Type,
-    domo_update_api, domo_update_name,
-    domo_update_SwitchType_SubType_Type, find_first_unit_widget_from_deviceID)
+    domo_update_api, domo_update_name, domo_update_SwitchType_SubType_Type,
+    find_first_unit_widget_from_deviceID)
 from Modules.tools import Hex_Format, is_domoticz_latest_typename, is_hex
 from Modules.zigateConsts import ADDRESS_MODE, LEGRAND_REMOTES, ZIGATE_EP
 from Zigbee.zclCommands import (zcl_group_level_move_to_level,
