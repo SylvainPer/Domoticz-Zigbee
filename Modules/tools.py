@@ -22,7 +22,7 @@ import os.path
 import time
 from pathlib import Path
 
-from Modules.database import WriteDeviceList
+from Modules.database import save_plugin_database
 from Modules.pluginDbAttributes import STORE_CONFIGURE_REPORTING
 from Modules.zigateConsts import HEARTBEAT
 from Modules.domoticzAbstractLayer import domo_read_Device_Idx, domo_read_Name
@@ -305,7 +305,7 @@ def reconnectNWkDevice(self, new_NwkId, IEEE, old_NwkId):
             del self.ListOfDevices[new_NwkId][STORE_CONFIGURE_REPORTING]
         self.ListOfDevices[new_NwkId]["Heartbeat"] = "0"
 
-    WriteDeviceList(self, 0)
+    save_plugin_database(self, 0)
     self.log.logging("PluginTools", "Status", "NetworkID: %s is replacing %s for object: %s" % (new_NwkId, old_NwkId, IEEE))
     return True
 
