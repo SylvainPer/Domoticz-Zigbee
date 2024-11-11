@@ -134,7 +134,7 @@ from Modules.checkingUpdate import (check_plugin_version_against_dns,
                                     is_plugin_update_available,
                                     is_zigate_firmware_available)
 from Modules.command import domoticz_command
-from Modules.database import (LoadDeviceList, WriteDeviceList,
+from Modules.database import (load_plugin_database, save_plugin_database,
                               checkDevices2LOD, checkListOfDevice2Devices,
                               import_local_device_conf)
 from Modules.domoticzAbstractLayer import (domo_read_Name,
@@ -512,7 +512,7 @@ class BasePlugin:
         
         # Import DeviceList.txt Filename is : DeviceListName
         self.log.logging("Plugin", "Status", "Z4D loading database")
-        if LoadDeviceList(self) == "Failed":
+        if load_plugin_database(self) == "Failed":
 
             self.log.logging("Plugin", "Error", "Something wennt wrong during the import of Load of Devices ...")
             self.log.logging(
@@ -602,7 +602,7 @@ class BasePlugin:
         if self.log:
             self.log.logging("Plugin", "Status", "Flushing to disk")
 
-        WriteDeviceList(self, -1)  # write immediatly
+        save_plugin_database(self, -1)  # write immediatly
 
         # Save PluginConf
         self.pluginconf.write_Settings()
@@ -629,7 +629,7 @@ class BasePlugin:
 
         # Save plugin database
         if self.PDMready and self.pluginconf:
-            WriteDeviceList(self, 0)
+            save_plugin_database(self, 0)
 
         # Print and save statistics if configured
         if self.PDMready and self.pluginconf and self.statistics:
@@ -902,11 +902,11 @@ class BasePlugin:
 
         # Write the ListOfDevice every 15 minutes or immediatly if we have remove or added a Device
         if len(Devices) == prevLenDevices:
-            WriteDeviceList(self, ( (15 * 60) // HEARTBEAT) )
+            save_plugin_database(self, ( (15 * 60) // HEARTBEAT) )
 
         else:
             self.log.logging("Plugin", "Debug", "Devices size has changed , let's write ListOfDevices on disk")
-            WriteDeviceList(self, 0)  # write immediatly
+            save_plugin_database(self, 0)  # write immediatly
             networksize_update(self)
   
         _trigger_coordinator_backup( self )
