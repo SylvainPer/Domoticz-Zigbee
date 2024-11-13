@@ -1510,7 +1510,23 @@ def print_stack( self ):
 
 
 def helper_copyfile(source, dest, move=True):
+    """
+    Copy or move a file from a source path to a destination path.
 
+    This function uses the `shutil` module to move or copy files. If `shutil.move`
+    or `shutil.copy` fails (for example, if the file types are incompatible), it
+    attempts to perform a line-by-line copy.
+
+    Args:
+        source (str): Path to the source file.
+        dest (str): Path to the destination file or directory.
+        move (bool, optional): If True, the file is moved (deleted from source after copying).
+                               If False, the file is copied. Defaults to True.
+
+    Raises:
+        Exception: Any exception raised by `shutil.move` or `shutil.copy` that cannot be handled
+                   by the line-by-line copy fallback will propagate up.
+    """
     try:
         import shutil
 
@@ -1525,7 +1541,25 @@ def helper_copyfile(source, dest, move=True):
 
 
 def helper_versionFile(source, nbversion):
+    """
+    Manage versioning for a file by creating sequentially numbered backups.
 
+    This function creates versioned copies of a given file by appending incremental
+    numbers to the filename. If `nbversion` is greater than 1, it shifts previous
+    versions by incrementing their version numbers before creating a new version.
+    The newest version is always `source-01`.
+
+    Args:
+        source (str): Path to the source file to be versioned.
+        nbversion (int): Number of versions to maintain. If `nbversion` is 0,
+                         no action is taken. If 1, only a single version (`source-01`)
+                         is created. For values greater than 1, each prior version is
+                         shifted up by 1, deleting the oldest if `nbversion` limit
+                         is exceeded
+
+    Returns:
+        None
+    """
     source = str(source)
     if nbversion == 0:
         return

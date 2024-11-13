@@ -523,16 +523,13 @@ class PluginConf:
                     else:
                         write_pluginConf[param] = self.pluginConf[param]
 
+        Domoticz.Status( f"+ Saving Plugin Configuration into {pluginConfFile}")
         with open(pluginConfFile, "wt") as handle:
             json.dump(write_pluginConf, handle, sort_keys=True, indent=2)
-
 
         if is_domoticz_db_available(self) and (self.pluginConf["useDomoticzDatabase"] or self.pluginConf["storeDomoticzDatabase"]):
             Domoticz.Status("+ Saving Plugin Configuration into Domoticz")
             setConfigItem(Key="PluginConf", Attribute="b64encoded", Value={"TimeStamp": time.time(), "b64encoded": write_pluginConf})
-
-
-
 
 
 def _load_Settings(self):
@@ -545,36 +542,28 @@ def _load_Settings(self):
         if "TimeStamp" in _domoticz_pluginConf:
             dz_timestamp = _domoticz_pluginConf["TimeStamp"]
             _domoticz_pluginConf = _domoticz_pluginConf["b64encoded"]
-            Domoticz.Log(
-                "Plugin data loaded where saved on %s"
-                % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp)))
-            )
+            Domoticz.Log( "Plugin data loaded where saved on %s" % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))) )
         if not isinstance(_domoticz_pluginConf, dict):
             _domoticz_pluginConf = {}
 
     txt_timestamp = 0
     if os.path.isfile(self.pluginConf["filename"]):
         txt_timestamp = os.path.getmtime(self.pluginConf["filename"])
-    Domoticz.Log("%s timestamp is %s" % (self.pluginConf["filename"], txt_timestamp))
+        Domoticz.Log("%s timestamp is %s" % (self.pluginConf["filename"], txt_timestamp))
 
-    if dz_timestamp < txt_timestamp:
-        Domoticz.Log("Dz PluginConf is older than Json Dz: %s Json: %s" % (dz_timestamp, txt_timestamp))
-        # We should load the json file
+        with open(self.pluginConf["filename"], "rt") as handle:
+            _pluginConf = {}
+            try:
+                _pluginConf = json.load(handle)
 
-    with open(self.pluginConf["filename"], "rt") as handle:
-        _pluginConf = {}
-        try:
-            _pluginConf = json.load(handle)
+            except json.decoder.JSONDecodeError as e:
+                Domoticz.Error("poorly-formed %s, not JSON: %s" % (self.pluginConf["filename"], e))
+                return
 
-        except json.decoder.JSONDecodeError as e:
-            Domoticz.Error("poorly-formed %s, not JSON: %s" % (self.pluginConf["filename"], e))
-            return
-
-        for param in _pluginConf:
-            self.pluginConf[param] = _pluginConf[param]
+            loaded_from = "Domoticz"
 
     # Check Load
-    if is_domoticz_db_available(self):
+    if is_domoticz_db_available(self) and _pluginConf:
         Domoticz.Log("==> Sanity check : PluginConf Loaded. %s entries from Domoticz, %s from Json" % (
             len(_domoticz_pluginConf), len(_pluginConf)))
 
@@ -582,15 +571,28 @@ def _load_Settings(self):
         for x in _pluginConf:
             if x not in _domoticz_pluginConf:
                 Domoticz.Error("-- %s is missing in Dz" % x)
+
             elif _pluginConf[x] != _domoticz_pluginConf[x]:
-                Domoticz.Error(
-                    "++ %s is different in Dz: %s from Json: %s" % (x, _domoticz_pluginConf[x], _pluginConf[x])
-                )
-                
+                Domoticz.Error( "++ %s is different in Dz: %s from Json: %s" % (x, _domoticz_pluginConf[x], _pluginConf[x]) )
+
+    if dz_timestamp > txt_timestamp:
+        # We should load the Domoticz file
+        load_plugin_conf = _domoticz_pluginConf
+        loaded_from = "Domoticz"
+    else:
+        # We should use Json
+        load_plugin_conf = _pluginConf
+
+    for param in load_plugin_conf:
+        self.pluginConf[param] = load_plugin_conf[param]
+
+    Domoticz.Status("Z4D loads %s config entries from %s" % (len(_domoticz_pluginConf), loaded_from))
+
     # Overwrite Zigpy parameters if we are running native Zigate
     if self.zigbee_communication != "zigpy":
         # Force to 0 as this parameter is only relevant to Zigpy
         self.pluginConf["ZigpyTopologyReport"] = False
+
 
 def _load_oldfashon(self, homedir, hardwareid):
     # Import PluginConf.txt

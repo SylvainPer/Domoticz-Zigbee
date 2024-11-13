@@ -629,7 +629,7 @@ class BasePlugin:
 
         # Save plugin database
         if self.PDMready and self.pluginconf:
-            save_plugin_database(self, 0)
+            save_plugin_database(self, -1)
 
         # Print and save statistics if configured
         if self.PDMready and self.pluginconf and self.statistics:

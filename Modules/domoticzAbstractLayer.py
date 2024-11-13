@@ -85,9 +85,6 @@ def setConfigItem(Key=None, Attribute="", Value=None):
 
 
 def getConfigItem(Key=None, Attribute="", Default=None):
-    
-    domoticz_log_api("Loading %s - %s from Domoticz sqlite Db" %( Key, Attribute))
-    
     if Default is None:
         Default = {}
     Value = Default

@@ -143,41 +143,51 @@ MANUFACTURER_ATTRIBUTES = (
 
 
 def load_plugin_database(self):
-    # Load DeviceList.txt into ListOfDevices
-    #
+    """ Load plugin database in memory. """
+
     ListOfDevices_imported_from_Domoticz = None
     list_of_device_txt_filename = Path( self.pluginconf.pluginConf["pluginData"] ) / self.DeviceListName
 
     if self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]:
         ListOfDevices_imported_from_Domoticz, saving_time = load_plugin_database_from_domoticz(self)
-        backup_domoticz_more_recent = is_timestamp_recent_than_filename(self, saving_time, list_of_device_txt_filename )
-        self.log.logging( "Database", "Debug", "Database from Dz is recent: %s Loading from Domoticz Db" % backup_domoticz_more_recent)
+        backup_domoticz_more_recent = is_timestamp_recent_than_filename(self, saving_time, list_of_device_txt_filename ) if os.path.exists(list_of_device_txt_filename) else True
+        self.log.logging( "Database", "Log", "Database from Dz is recent: %s Loading from Domoticz Db" % backup_domoticz_more_recent)
         res = "Success"
 
-    if not os.path.isfile(list_of_device_txt_filename):
+    if os.path.isfile(list_of_device_txt_filename):
+        # Loading plugin database from txt file and populate the ListOfDevices dictionary
         self.ListOfDevices = {}
-        if not self.pluginconf.pluginConf["useDomoticzDatabase"]:
-            return True
+        res = load_plugin_database_txt_format(self, list_of_device_txt_filename)
 
-    res = load_plugin_database_txt_format(self, list_of_device_txt_filename)
-    self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), list_of_device_txt_filename))
+        # Keep the Size of the DeviceList in order to check changes
+        self.log.logging("Database", "Log", "LoadDeviceList - DeviceList filename : %s" % list_of_device_txt_filename)
 
-    if ListOfDevices_imported_from_Domoticz:
+        # Manage versioning for a file by creating sequentially numbered backups.
+        Modules.tools.helper_versionFile(list_of_device_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
+        loaded_from = list_of_device_txt_filename
+
+    # At that stage, we have loaded from Domoticz and from txt file.
+    if ListOfDevices_imported_from_Domoticz and self.ListOfDevices:
         self.log.logging( "Database", "Log", "Sanity check. Plugin database loaded from Domoticz. %s from domoticz, %s from txt file" % (
             len(ListOfDevices_imported_from_Domoticz), len(self.ListOfDevices), ), )
 
-    self.log.logging("Database", "Debug", "LoadDeviceList - DeviceList filename : %s" % list_of_device_txt_filename)
-    Modules.tools.helper_versionFile(list_of_device_txt_filename, self.pluginconf.pluginConf["numDeviceListVersion"])
+    if ListOfDevices_imported_from_Domoticz and self.pluginconf.pluginConf["useDomoticzDatabase"] and backup_domoticz_more_recent:
+        # We will use the Domoticz import.
+        self.ListOfDevices = {}
+        self.ListOfDevices = ListOfDevices_imported_from_Domoticz
+        loaded_from = "Domoticz"
 
-    # Keep the Size of the DeviceList in order to check changes
-    self.DeviceListSize = os.path.getsize(list_of_device_txt_filename)
+    self.log.logging("Database", "Status", "Z4D loads %s entries from %s" % (len(self.ListOfDevices), loaded_from)) 
 
     cleanup_table_entries( self)
+    hacks_after_loading(self)
+    reset_data_structuture_after_load(self)
+    load_new_param_definition(self)
 
-    if self.pluginconf.pluginConf["ZigpyTopologyReport"]:
-        # Cleanup the old Topology data
-        remove_legacy_topology_datas(self)
-        
+    return res
+
+
+def hacks_after_loading(self):
     for addr in self.ListOfDevices:
         # Fixing mistake done in the code.
         fixing_consumption_lumi(self, addr)
@@ -223,6 +233,12 @@ def load_plugin_database(self):
             # We need to adjust the Model to the right mode
             update_zlinky_device_model_if_needed(self, addr)
 
+
+def reset_data_structuture_after_load(self):
+    if self.pluginconf.pluginConf["ZigpyTopologyReport"]:
+        # Cleanup the old Topology data
+        remove_legacy_topology_datas(self)
+
     if self.pluginconf.pluginConf["resetReadAttributes"]:
         self.pluginconf.pluginConf["resetReadAttributes"] = False
         self.pluginconf.write_Settings()
@@ -230,10 +246,6 @@ def load_plugin_database(self):
     if self.pluginconf.pluginConf["resetConfigureReporting"]:
         self.pluginconf.pluginConf["resetConfigureReporting"] = False
         self.pluginconf.write_Settings()
-
-    load_new_param_definition(self)
-    
-    return res
 
 
 def load_plugin_database_txt_format(self, dbName):
@@ -307,8 +319,8 @@ def is_timestamp_recent_than_filename(self, dz_timestamp, device_list_txt_filena
 
     # Log only when dz_timestamp is more recent than txt_timestamp
     if dz_timestamp > txt_timestamp:
-        self.log.logging("Database", "Log", f"{device_list_txt_filename} timestamp: {txt_timestamp}")
-        self.log.logging("Database", "Log", f"Dz timestamp {dz_timestamp} is more recent than Txt timestamp {txt_timestamp}")
+        self.log.logging("Database", "Debug", f"{device_list_txt_filename} timestamp: {txt_timestamp}")
+        self.log.logging("Database", "Debug", f"Dz timestamp {dz_timestamp} is more recent than Txt timestamp {txt_timestamp}")
         return True
     return False
 
@@ -341,6 +353,7 @@ def save_plugin_database_txt_format(self):
     # Write in classic format ( .txt )
     _pluginData = Path( self.pluginconf.pluginConf["pluginData"] )
     _DeviceListFileName = _pluginData / self.DeviceListName
+    self.log.logging("Database", "Status", f"+ Saving plugin database into {_DeviceListFileName}")
     try:
         self.log.logging("Database", "Debug", "save_plugin_database_txt_format %s = %s" % (_DeviceListFileName, str(self.ListOfDevices)))
         with open(_DeviceListFileName, "wt", encoding='utf-8') as file:
