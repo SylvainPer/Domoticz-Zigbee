@@ -53,8 +53,8 @@ def load_groups_list_from_json(self):
     # Load from Domoticz
     if self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]:
         _domoticz_grouplist = getConfigItem(Key="ListOfGroups", Attribute="b64encoded")
-        dz_timestamp = _domoticz_grouplist.get("TimeStamp"],0)
-        _domoticz_grouplist = _domoticz_grouplist.get("b64encoded"], {})
+        dz_timestamp = _domoticz_grouplist.get("TimeStamp",0)
+        _domoticz_grouplist = _domoticz_grouplist.get("b64encoded", {})
         self.logging( "Debug", "Groups data loaded where saved on %s"% (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))),)
 
     # Load from Json
