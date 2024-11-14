@@ -575,7 +575,7 @@ def _load_Settings(self):
             elif _pluginConf[x] != _domoticz_pluginConf[x]:
                 Domoticz.Error( "++ %s is different in Dz: %s from Json: %s" % (x, _domoticz_pluginConf[x], _pluginConf[x]) )
 
-    if dz_timestamp > txt_timestamp:
+    if self.pluginconf.pluginConf["useDomoticzDatabase"] and dz_timestamp > txt_timestamp:
         # We should load the Domoticz file
         load_plugin_conf = _domoticz_pluginConf
         loaded_from = "Domoticz"
