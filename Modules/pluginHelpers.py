@@ -138,6 +138,8 @@ def check_requirements(home_folder):
         req_str = req_str.strip()
 
         package = re.split(r'[<>!=]+', req_str)[0].strip()
+        if package == "":
+            continue
         version = None
         try:
             installed_version = importlib.metadata.version(package)
@@ -160,15 +162,15 @@ def check_requirements(home_folder):
                     return True
 
         except importlib.metadata.PackageNotFoundError as e:
-            Domoticz.Error(f"An unexpected error occurred while checking {req_str} - {e}")
+            Domoticz.Error(f"An unexpected error occurred while checking package {package} - {req_str} - {e}")
             return True
 
         except importlib.metadata.MetadataError as e:
-            Domoticz.Error(f"An unexpected error occurred while checking {req_str} - {e}")
+            Domoticz.Error(f"An unexpected error occurred while checking {package} - {req_str} - {e}")
             return True
 
         except Exception as e:
-            Domoticz.Error(f"An unexpected error occurred: {e}")
+            Domoticz.Error(f"An unexpected error occurred: {package} - {e}")
             return True
 
         Domoticz.Status(f"   - {req_str} version required {version} installed {installed_version}")
