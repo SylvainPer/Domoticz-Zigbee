@@ -33,13 +33,12 @@ def write_groups_list(self):
     """
     self.logging("Debug", "Dumping: %s" % self.GroupListFileName)
 
-    Domoticz.Status( f"+ Saving Group List into {self.GroupListFileName}")
+    self.logging("Status", f"+ Saving Group List into {self.GroupListFileName}")
     with open(self.GroupListFileName, "wt") as handle:
         json.dump(self.ListOfGroups, handle, sort_keys=True, indent=2)
 
     if is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
-        Domoticz.Status( "+ Saving Group List into Domoticz")
-        self.log.logging("Database", "Debug", "Save Plugin Group Db to Domoticz")
+        self.logging("Status", "+ Saving Group List into Domoticz")
         setConfigItem(Key="ListOfGroups", Attribute="b64encoded", Value={"TimeStamp": time.time(), "b64encoded": self.ListOfGroups})
 
 
@@ -64,11 +63,11 @@ def load_groups_list_from_json(self):
         with open(self.GroupListFileName, "rt") as handle:
             _json_grouplist = json.load(handle)
             txt_timestamp = os.path.getmtime(self.GroupListFileName)
-            domoticz_log_api("%s timestamp is %s" % (self.GroupListFileName, txt_timestamp))
+            self.logging( "Debug", "%s timestamp is %s" % (self.GroupListFileName, txt_timestamp))
      
     # Check Loads
     if _domoticz_grouplist and _json_grouplist :
-        Domoticz.Log("==> Sanity check : GroupList Loaded. %s entries from Domoticz, %s from Json, result: %s" % (
+        self.logging( "Debug", "==> Sanity check : GroupList Loaded. %s entries from Domoticz, %s from Json, result: %s" % (
             len(_domoticz_grouplist), len(_json_grouplist), _domoticz_grouplist == _json_grouplist ))
     
     if self.pluginconf.pluginConf["useDomoticzDatabase"] and dz_timestamp > txt_timestamp:
@@ -80,7 +79,7 @@ def load_groups_list_from_json(self):
         loaded_from = self.GroupListFileName
         self.ListOfGroups = _json_grouplist
 
-    Domoticz.Status("Z4D loads %s config entries from %s" % (len(self.ListOfGroups), loaded_from))
+    self.logging("Status", "Z4D loads %s config entries from %s" % (len(self.ListOfGroups), loaded_from))
 
 
 def build_group_list_from_list_of_devices(self):
