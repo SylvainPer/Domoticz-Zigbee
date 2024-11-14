@@ -37,7 +37,7 @@ def write_groups_list(self):
     with open(self.GroupListFileName, "wt") as handle:
         json.dump(self.ListOfGroups, handle, sort_keys=True, indent=2)
 
-    if is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
+    if self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]:
         self.logging("Status", "+ Saving Group List into Domoticz")
         setConfigItem(Key="ListOfGroups", Attribute="b64encoded", Value={"TimeStamp": time.time(), "b64encoded": self.ListOfGroups})
 

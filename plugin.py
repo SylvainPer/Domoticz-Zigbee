@@ -603,6 +603,9 @@ class BasePlugin:
             self.log.logging("Plugin", "Status", "Flushing to disk")
 
         save_plugin_database(self, -1)  # write immediatly
+        # Save ListGroups
+        if self.groupmgt:
+            self.groupmgt.write_groups_list()
 
         # Save PluginConf
         self.pluginconf.write_Settings()
@@ -626,6 +629,7 @@ class BasePlugin:
         # Stop WebServer
         if self.pluginconf and self.webserver:
             self.webserver.onStop()
+
 
         # Save plugin database
         if self.PDMready and self.pluginconf:

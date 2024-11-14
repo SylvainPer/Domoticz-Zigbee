@@ -41,7 +41,7 @@ def decode_configuration(config_str, main_attribut=None):
         config_data = json.loads(config_str) if config_str else {}
         
         # If a specific main attribute is provided, filter to process just that one
-        attributes_to_process = [main_attribut] if main_attribut else ["ListOfDevices", "PluginConf", "CoordinatorBackup"]
+        attributes_to_process = [main_attribut] if main_attribut else [ "ListOfGroups", "ListOfDevices", "PluginConf", "CoordinatorBackup"]
         
         for attribut_key in attributes_to_process:
             if attribut_key in config_data:
@@ -127,7 +127,7 @@ def main():
     # Set up argument parsing
     parser = argparse.ArgumentParser(description="Fetch hardware records from an SQLite database.")
     parser.add_argument("database", help="Path to the SQLite database file")
-    parser.add_argument("--main_attribut", choices=["ListOfDevices", "PluginConf", "CoordinatorBackup"],
+    parser.add_argument("--main_attribut", choices=[ "ListOfGroups", "ListOfDevices", "PluginConf", "CoordinatorBackup"],
                         help="Specify which main attribute to print (default is to print all)")
     
     # Parse arguments
