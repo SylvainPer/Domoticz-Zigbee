@@ -33,12 +33,14 @@ def write_groups_list(self):
     """
     self.logging("Debug", "Dumping: %s" % self.GroupListFileName)
 
+    Domoticz.Status( f"+ Saving Group List into {self.GroupListFileName}")
     with open(self.GroupListFileName, "wt") as handle:
         json.dump(self.ListOfGroups, handle, sort_keys=True, indent=2)
 
     if is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
+        Domoticz.Status( "+ Saving Group List into Domoticz")
         self.log.logging("Database", "Debug", "Save Plugin Group Db to Domoticz")
-        setConfigItem(Key="ListOfGroups", Value={"TimeStamp": time.time(), "b64Groups": self.ListOfGroups})
+        setConfigItem(Key="ListOfGroups", Attribute="b64encoded", Value={"TimeStamp": time.time(), "b64encoded": self.ListOfGroups})
 
 
 def load_groups_list_from_json(self):
@@ -48,39 +50,37 @@ def load_groups_list_from_json(self):
     if self.GroupListFileName is None:
         return
 
-    if is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
-        _domoticz_grouplist = getConfigItem(Key="ListOfGroups")
+    # Load from Domoticz
+    if self.pluginconf.pluginConf["useDomoticzDatabase"] or self.pluginconf.pluginConf["storeDomoticzDatabase"]:
+        _domoticz_grouplist = getConfigItem(Key="ListOfGroups", Attribute="b64encoded")
+        dz_timestamp = _domoticz_grouplist.get("TimeStamp"],0)
+        _domoticz_grouplist = _domoticz_grouplist.get("b64encoded"], {})
+        self.logging( "Debug", "Groups data loaded where saved on %s"% (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))),)
 
-        dz_timestamp = 0
-        if "TimeStamp" in _domoticz_grouplist:
-            dz_timestamp = _domoticz_grouplist["TimeStamp"]
-            _domoticz_grouplist = _domoticz_grouplist["b64Groups"]
-            self.logging(
-                "Debug",
-                "Groups data loaded where saved on %s"
-                % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))),
-            )
-
-        txt_timestamp = 0
-        if os.path.isfile(self.GroupListFileName):
+    # Load from Json
+    txt_timestamp = 0
+    if os.path.isfile(self.GroupListFileName):
+        _json_grouplist = {}
+        with open(self.GroupListFileName, "rt") as handle:
+            _json_grouplist = json.load(handle)
             txt_timestamp = os.path.getmtime(self.GroupListFileName)
-        domoticz_log_api("%s timestamp is %s" % (self.GroupListFileName, txt_timestamp))
-        if dz_timestamp < txt_timestamp:
-            domoticz_log_api("Dz Group is older than Json Dz: %s Json: %s" % (dz_timestamp, txt_timestamp))
-            # We should load the json file
+            domoticz_log_api("%s timestamp is %s" % (self.GroupListFileName, txt_timestamp))
+     
+    # Check Loads
+    if _domoticz_grouplist and _json_grouplist :
+        Domoticz.Log("==> Sanity check : GroupList Loaded. %s entries from Domoticz, %s from Json, result: %s" % (
+            len(_domoticz_grouplist), len(_json_grouplist), _domoticz_grouplist == _json_grouplist ))
+    
+    if self.pluginconf.pluginConf["useDomoticzDatabase"] and dz_timestamp > txt_timestamp:
+        # We should load the Domoticz file
+        self.ListOfGroups = _domoticz_grouplist
+        loaded_from = "Domoticz"
+    else:
+        # We should use Json
+        loaded_from = self.GroupListFileName
+        self.ListOfGroups = _json_grouplist
 
-        if not isinstance(_domoticz_grouplist, dict):
-            _domoticz_grouplist = {}
-
-    if not os.path.isfile(self.GroupListFileName):
-        self.logging("Debug", "GroupMgt - Nothing to import from %s" % self.GroupListFileName)
-        return
-
-    with open(self.GroupListFileName, "rt") as handle:
-        self.ListOfGroups = json.load(handle)
-
-    if is_domoticz_db_available(self) and self.pluginconf.pluginConf["useDomoticzDatabase"]:
-        domoticz_log_api("GroupList Loaded from Dz: %s from Json: %s" % (len(_domoticz_grouplist), len(self.ListOfGroups)))
+    Domoticz.Status("Z4D loads %s config entries from %s" % (len(self.ListOfGroups), loaded_from))
 
 
 def build_group_list_from_list_of_devices(self):
