@@ -10,7 +10,6 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
-
 import json
 from time import time
 

@@ -11,9 +11,6 @@
 # SPDX-License-Identifier:    GPL-3.0 license
 
 
-
-
-
 from Modules.tools import Hex_Format, rgb_to_hsl, rgb_to_xy
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 from Zigbee.zclCommands import (zcl_add_group_membership,

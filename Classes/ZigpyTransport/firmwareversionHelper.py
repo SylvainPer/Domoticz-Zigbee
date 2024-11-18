@@ -78,4 +78,3 @@ def znp_extract_versioning_for_plugin(self, znp_model, znp_manuf, version):
     self.log.logging("TransportZigpy", "Debug", "extract_versioning_for_plugin %s %s %s %s" % (
         firmware_branch, firmware_major_version, firmware_version, build))
     return firmware_branch, firmware_version, build
-

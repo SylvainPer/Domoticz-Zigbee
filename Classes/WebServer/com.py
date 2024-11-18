@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
 
 import os
 import socket
@@ -10,8 +16,8 @@ import ssl
 import threading
 import traceback
 
-from Modules.domoticzAbstractLayer import domoticz_connection
 from Classes.WebServer.tools import MAX_BLOCK_SIZE
+from Modules.domoticzAbstractLayer import domoticz_connection
 
 
 def startWebServer(self):

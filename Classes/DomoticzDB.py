@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: badz & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Module: z_DomoticzDico.py
 
@@ -15,12 +22,12 @@ import base64
 import binascii
 import json
 import socket
+import ssl
 import time
 import urllib.request
-import ssl
 
-from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Classes.LoggingManagement import LoggingManagement
+from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 from Modules.tools import is_domoticz_new_API
 
 CACHE_TIMEOUT = (15 * 60) + 15  # num seconds

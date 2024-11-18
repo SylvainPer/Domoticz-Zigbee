@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-# coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Implementation of Zigbee for Domoticz plugin.
 #
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: badz & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 """
     Class: AdminWidget.py
 
@@ -31,12 +38,12 @@ def _get_switch_selector_options(self, ):
             "SelectorStyle": "0",
         }
         
-    return {
-            "LevelActions": "|||||||",
-            "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrolmennt|Perm. Enrollment|Interf Scan|LQI Report",
-            "LevelOffHidden": "true",
-            "SelectorStyle": "0",
-        }
+    return { 
+        "LevelActions": "|||||||",
+        "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrolmennt|Perm. Enrollment|Interf Scan|LQI Report",
+        "LevelOffHidden": "true",
+        "SelectorStyle": "0",
+    }
 
 class AdminWidgets:
     def __init__(self, log, PluginConf, pluginParameters, ListOfDomoticzWidget, Devices, ListOfDevices, HardwareID, IEEE2NWK):
@@ -146,5 +153,3 @@ class AdminWidgets:
 
     def handleCommand(self, Command):
         return
-
-
