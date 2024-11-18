@@ -720,7 +720,7 @@ class WebServer(object):
 
                 if not found:
                     domoticz_error_api("Unexpected parameter: %s" % setting)
-                    _response["Data"] = {"unexpected parameters %s" % setting}
+                    _response["Data"] = json.dumps("unexpected parameters %s" % setting)
 
             if upd:
                 # We need to write done the new version of PluginConf
@@ -1208,7 +1208,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb != "PUT":
-            _response["Data"] = {"Error": "Unknow verb"}
+            _response["Data"] = json.dumps("Error: %s" %"Unknow verb")
             return _response
 
         _response["Data"] = None
@@ -1218,15 +1218,15 @@ class WebServer(object):
             domoticz_log_api("---> Data: %s" % str(data))
             if "Channel" not in data:
                 domoticz_error_api("Unexpected request: %s" % data)
-                _response["Data"] = {"Error": "Unknow verb"}
+                _response["Data"] = json.dumps( "Error: %s" %"Unknow verb")
                 return _response
             channel = data["Channel"]
             if channel not in range(11, 27):
-                _response["Data"] = {"Error": "incorrect channel: %s" % channel}
+                _response["Data"] = json.dumps( "Error: incorrect channel %s" %channel)
                 return _response
             initiate_change_channel(self, int(channel))
 
-            _response["Data"] = {"Request channel: %s" % channel}
+            _response["Data"] = json.dumps("Request channel: %s" % channel)
         return _response
 
     def rest_raw_command(self, verb, data, parameters):
@@ -1515,7 +1515,7 @@ class WebServer(object):
                 if mode in ("0", "1", "2"):
                     zigate_set_mode(self, int(mode) )
                     #send_zigate_mode(self, int(mode))
-                    _response["Data"] = {"ZiGate mode: %s requested" % mode}
+                    _response["Data"] = json.dumps("ZiGate mode: %s requested" % mode)
         return _response
 
     def rest_battery_state(self, verb, data, parameters):
