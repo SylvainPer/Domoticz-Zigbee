@@ -18,6 +18,21 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## Nov 2024 - stable7.1.013 (2024.05)
+
+- [Technical] - Latest zigpy release ( zigpy==0.72.0, zigpy_znp==0.13.1, zigpy_deconz==0.24.1, bellows==0.42.0)
+- [Technical] - Adding Polling control capabilities
+- [Technical] - Adding delay after bind commands
+- [Technical] - Fix a problem introduced in previous version, where OTA messages were transfered to zigpy.
+
+- [WebUI] - Display of RSSI (for coordinator providing the information as Bellows)
+
+- [Hardware] - Door/Vibration sensor from Lexman
+- [Hardware] - illuminance 20min average for Tuya Rain/Lux sensor
+- [Hardware] - integration of TRV BAB-1413Pro-E
+
+Several small bugs and issues, as well as some code refactoring
+
 ## May 2024 - stable7.1.012 ( 2024.04)
 
 - [Technical] - Refactor Topology
