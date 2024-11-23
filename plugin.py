@@ -144,6 +144,11 @@ from Modules.domoticzAbstractLayer import (domo_read_Name,
                                            load_list_of_domoticz_widget)
 from Modules.heartbeat import processListOfDevices
 from Modules.input import zigbee_receive_message
+from Modules.matomo_request import (matomo_coordinator_initialisation,
+                                    matomo_plugin_analytics_infos,
+                                    matomo_plugin_restart,
+                                    matomo_plugin_shutdown,
+                                    matomo_plugin_started)
 from Modules.paramDevice import initialize_device_settings
 from Modules.piZigate import switchPiZigate_mode
 from Modules.pluginHelpers import (check_firmware_level,
@@ -582,6 +587,8 @@ class BasePlugin:
             usage_percentage = round(((255 - free_slots) / 255) * 100, 1)
             self.log.logging("Plugin", "Status", f"Z4D Widgets usage is at {usage_percentage}% ({free_slots} units free)")
 
+        if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
+            matomo_plugin_analytics_infos(self)
         self.log.logging("Plugin", "Status", f"Z4D started with {framework_status}")
 
         self.busy = False
@@ -597,7 +604,11 @@ class BasePlugin:
             None
         """
         Domoticz.Log("onStop()")
-        
+
+        if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
+            matomo_plugin_shutdown(self)
+            matomo_plugin_analytics_infos(self)
+
         # Flush ListOfDevices
         if self.log:
             self.log.logging("Plugin", "Log", "Flushing plugin database onto disk")
@@ -787,6 +798,9 @@ class BasePlugin:
         error_message = "Connection lost with coordinator, restarting plugin"
         self.log.logging("Plugin", "Error", error_message)
         self.adminWidgets.updateNotificationWidget(Devices, error_message)
+        if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
+            matomo_plugin_restart(self)
+
         restartPluginViaDomoticzJsonApi(self, stop=False, url_base_api=Parameters["Mode5"])
 
     #def onCommand(self, DeviceID, Unit, Command, Level, Color):
@@ -881,6 +895,9 @@ class BasePlugin:
         if self.internet_available:
             _check_plugin_version( self )
 
+            if self.pluginconf.pluginConf["MatomoOptIn"] and self.HeartbeatCount % ( (9 * 3600) // HEARTBEAT) == 0:
+                matomo_plugin_analytics_infos(self)
+
         if self.transport == "None":
             return
 
@@ -934,6 +951,7 @@ class BasePlugin:
 
         self.busy = _check_if_busy(self)
         return True
+
 
 def _onConnect_status_error(self, Status, Description):
     self.log.logging("Plugin", "Error", "Failed to connect (" + str(Status) + ")")
@@ -1135,6 +1153,8 @@ def zigateInit_Phase1(self):
     # Check if we have to Erase PDM.
     if self.zigbee_communication == "native" and Parameters["Mode3"] == "True" and not self.ErasePDMDone and not self.ErasePDMinProgress:  # Erase PDM
         zigate_erase_eeprom(self)
+        if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
+            matomo_coordinator_initialisation(self)
         self.log.logging("Plugin", "Status", "Z4D has erase the Zigate PDM")
         #sendZigateCmd(self, "0012", "")
         self.PDMready = False
@@ -1144,6 +1164,9 @@ def zigateInit_Phase1(self):
         return
     elif self.zigbee_communication == "zigpy" and Parameters["Mode3"] == "True" and not self.ErasePDMDone and not self.ErasePDMinProgress: 
         self.log.logging("Plugin", "Status", "Z4D requests to form a new network")
+        if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
+            matomo_coordinator_initialisation(self)
+
         self.ErasePDMinProgress = True
         update_DB_device_status_to_reinit( self )
         return
@@ -1320,6 +1343,9 @@ def zigateInit_Phase3(self):
 
     if self.iaszonemgt and self.ControllerIEEE:
         self.iaszonemgt.setZigateIEEE(self.ControllerIEEE)
+    
+    if self.internet_available and self.pluginconf.pluginConf["MatomoOptIn"]:
+        matomo_plugin_started(self)
 
 
 def start_GrpManagement(self, homefolder):

@@ -202,6 +202,7 @@ SETTINGS = {
     "PluginConfiguration": {
         "Order": 12,
         "param": {
+            "MatomoOptIn": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "PosixPathUpdate": {"type": "bool","default": 1,"current": None,"restart": 0,"hidden": True,"Advanced": True,},
             "storeDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
             "useDomoticzDatabase": {"type": "bool","default": 0,"current": None,"restart": 0,"hidden": False,"Advanced": True,},
@@ -254,6 +255,7 @@ SETTINGS = {
             "Livolo": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Lumi": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "MatchingNwkId": { "type": "str", "default": "ffff", "current": None, "restart": 0, "hidden": False, "Advanced": False },
+            "Matomo": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "Electric": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "NXPExtendedErrorCode": { "type": "bool", "default": 1, "current": None, "restart": 0, "hidden": False, "Advanced": True },
             "NetworkEnergy": { "type": "bool", "default": 0, "current": None, "restart": 0, "hidden": False, "Advanced": True },
@@ -591,6 +593,7 @@ def _load_Settings(self):
     if self.zigbee_communication != "zigpy":
         # Force to 0 as this parameter is only relevant to Zigpy
         self.pluginConf["ZigpyTopologyReport"] = False
+
 
 def _load_oldfashon(self, homedir, hardwareid):
     # Import PluginConf.txt

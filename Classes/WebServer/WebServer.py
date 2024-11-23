@@ -14,6 +14,7 @@ import json
 import mimetypes
 import os
 import os.path
+import platform
 import time
 
 from Classes.PluginConf import SETTINGS
@@ -30,6 +31,8 @@ from Modules.domoticzAbstractLayer import (domo_read_BatteryLevel,
                                            domoticz_error_api,
                                            domoticz_log_api,
                                            domoticz_status_api)
+from Modules.matomo_request import (matomo_opt_in_action,
+                                    matomo_opt_out_action)
 from Modules.sendZigateCommand import sendZigateCmd
 from Modules.tools import get_device_nickname, is_hex
 from Modules.txPower import set_TxPower
@@ -678,6 +681,15 @@ class WebServer(object):
                                 domoticz_error_api("Unknown Certification code %s (allow are CE and FCC)" % (setting_lst[setting]["current"]))
                                 continue
 
+                        elif param == "MatomoOptIn" and self.pluginconf.pluginConf[param] != setting_lst[setting]["current"]:
+                            self.pluginconf.pluginConf[param] = setting_lst[setting]["current"]
+                            if self.pluginconf.pluginConf[param]:
+                                # Opt-In (we move from Out to In )
+                                matomo_opt_in_action(self)
+                            else:
+                                # Opt-Out (we move from In to Out)
+                                matomo_opt_out_action(self)
+                        
                         elif param == "blueLedOnOff":
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]["current"]:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]["current"]
@@ -1620,4 +1632,28 @@ def get_plugin_parameters(self, filter=False):
         keys_to_remove = ["Mode5", "Username", "Password"]
         for key in keys_to_remove:
             plugin_parameters.pop(key, None)
+            
+    plugin_parameters["DistributionInfos"] = get_os_info()
     return plugin_parameters
+
+
+def get_os_info():
+    os_name = platform.system()
+    if os_name == "Linux":
+        try:
+            with open("/etc/os-release") as f:
+                lines = f.readlines()
+                os_info = {line.split('=')[0]: line.split('=')[1].strip().strip('"') for line in lines if '=' in line}
+            return os_info.get("NAME", "Unknown"), os_info.get("VERSION", "Unknown")
+
+        except Exception as e:
+            return "Linux", "Unknown"
+
+    elif os_name == "Windows":
+        return "Windows", platform.version()
+
+    elif os_name == "Darwin":
+        return "macOS", platform.mac_ver()[0]
+
+    else:
+        return os_name, "Unknown"
