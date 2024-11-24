@@ -18,6 +18,13 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## Nov. 2024 - stable7.1.014 (2024.06)
+
+- [Technical] - Remove duplicate line in contraints.txt
+- [WebUI] - Matomo information about OS Distribution
+- [Technical] - Matomo analytics from plugin (can be opt-out by disabling "MatomoOptIn" in Advanced Plugin Configuration Settings
+
+
 ## Nov 2024 - stable7.1.013 (2024.05)
 
 - [Technical] - Latest zigpy release ( zigpy==0.72.0, zigpy_znp==0.13.1, zigpy_deconz==0.24.1, bellows==0.42.0)
