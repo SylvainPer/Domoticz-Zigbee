@@ -9,3 +9,4 @@ zigpy_znp
 zigpy_deconz
 bellows
 requests
+distro
