@@ -1,3 +1,16 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: zaraki673 & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
+import contextlib
 import hashlib
 import json
 import os
@@ -319,7 +332,24 @@ def clean_custom_dimension_value(value: str) -> str:
 
 
 def get_raspberry_pi_model():
+    """ Return PlatformId if it exist """
     if os.path.exists( DEVICE_TREE_CONFIGURATION ):
         with open( DEVICE_TREE_CONFIGURATION , 'r') as f:
             return f.read().strip()
+    return None
+
+
+def get_platform_id():
+    """ Retrieve platform-specific details like hardware """
+
+    pi_model = get_raspberry_pi_model()
+    if pi_model:
+        return pi_model
+
+    # Extract hardware and revision from /proc/cpuinfo
+    with contextlib.suppress(FileNotFoundError):
+        with open("/proc/cpuinfo", "r") as cpuinfo_file:
+            for line in cpuinfo_file:
+                if line.startswith("Hardware"):
+                    return line.split(":")[1].strip()
     return None
