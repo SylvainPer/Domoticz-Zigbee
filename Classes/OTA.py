@@ -133,7 +133,7 @@ class OTAManagement(object):
 
     def __init__(
         self,
-        zigbee_communitation,
+        zigbee_communication,
         PluginConf,
         DeviceConf,
         adminWidgets,
@@ -150,7 +150,7 @@ class OTAManagement(object):
         ):
         
         # Pointers to external objects
-        self.zigbee_communication = zigbee_communitation
+        self.zigbee_communication = zigbee_communication
         self.HB = 0
         self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
         self.IEEE2NWK = IEEE2NWK  # Point to the List of IEEE to NWKID
@@ -702,26 +702,26 @@ def ota_upgrade_end_response(self, sqn, dest_addr, dest_ep, intMsgImageVersion, 
     #
     # UPGRADE_END_RESPONSE 	0x0504
     # u32UpgradeTime is the UTC time, in seconds, at which the client should upgrade the running image with the downloaded image
-
     # u32CurrentTime is the current UTC time, in seconds, on the server.
-    _UpgradeTime = 0x00
+
     EPOCTime = datetime(2000, 1, 1)
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
+    _UpgradeTime = UTCTime + 10  # 10 seconds delay
 
     _FileVersion = intMsgImageVersion
     _ImageType = image_type
     _ManufacturerCode = intMsgManufCode
 
-    datas = "%02x" % ADDRESS_MODE["short"] + dest_addr + ZIGATE_EP + dest_ep
-    datas += "%08x" % _UpgradeTime
-    datas += "%08x" % 0x00
-    datas += "%08x" % _FileVersion
-    datas += "%04x" % _ImageType
-    datas += "%04x" % _ManufacturerCode
-    
     if "ControllerInRawMode" in self.pluginconf.pluginConf and self.pluginconf.pluginConf["ControllerInRawMode"]:
         zcl_raw_ota_upgrade_end_response(self, sqn, dest_addr, ZIGATE_EP, dest_ep, "%04x" % _ManufacturerCode, "%04x" % _ImageType, "%08x" % _FileVersion, "%08x" %UTCTime, "%08x" % _UpgradeTime)
     else:
+        datas = "%02x" % ADDRESS_MODE["short"] + dest_addr + ZIGATE_EP + dest_ep
+        datas += "%08x" % _UpgradeTime
+        datas += "%08x" % 0x00
+        datas += "%08x" % _FileVersion
+        datas += "%04x" % _ImageType
+        datas += "%04x" % _ManufacturerCode
+
         self.ControllerLink.sendData("0504", datas, ackIsDisabled=False, NwkId=dest_addr)
 
     logging( self, "Log", "ota_management - sending Upgrade End Response, for %s Version: 0x%08X Type: 0x%04x, Manuf: 0x%04X" % (dest_addr, _FileVersion, _ImageType, _ManufacturerCode), )
@@ -1344,7 +1344,9 @@ def update_firmware_health(self, MsgSrcAddr, completion):
 
 
 def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgFileOffset, MsgMaxDataSize):  # OK 24/10/2020
+    """Start the firmware upgrade process for a device."""
 
+    # Retrieve the image entry for the requested image type
     entry = retrieve_image(self, intMsgImageType)
     if entry is None:
         logging(self, "Error", "start_upgrade_infos: No Firmware available to satify this request by %s !!!" % MsgSrcAddr)
@@ -1352,12 +1354,13 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
     brand, ota_image_file = entry
 
     available_image = self.ListOfImages["Brands"][brand][ota_image_file]
+
+    # Populate `ListInUpdate` with image details
     self.ListInUpdate["intSize"] = available_image["intSize"]
     self.ListInUpdate["ImageVersion"] = available_image["intImageVersion"]
     self.ListInUpdate["Process"] = available_image["Process"]
     self.ListInUpdate["Decoded Header"] = available_image["Decoded Header"]
     self.ListInUpdate["OtaImage"] = available_image["OtaImage"]
-
     self.ListInUpdate["ImageType"] = "%04x" % intMsgImageType
     self.ListInUpdate["intImageType"] = intMsgImageType
     self.ListInUpdate["NwkId"] = MsgSrcAddr
@@ -1368,6 +1371,7 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
     self.ListInUpdate["LastBlockSent"] = 0
     self.ListInUpdate["StartTime"] = time.time()
 
+    # Initialize or reset the "Firmware Update" section in PluginHealth
     if "Firmware Update" not in self.PluginHealth:
         self.PluginHealth["Firmware Update"] = {}
     if "Firmware Update" in self.PluginHealth:
@@ -1375,21 +1379,25 @@ def start_upgrade_infos(self, MsgSrcAddr, intMsgImageType, intMsgManufCode, MsgF
     if self.PluginHealth["Firmware Update"] is None:
         self.PluginHealth["Firmware Update"] = {}
 
+    # Initialize or reset the "Firmware Update" section in PluginHealth
     self.PluginHealth["Firmware Update"]["Progress"] = "0%"
     self.PluginHealth["Firmware Update"]["Device"] = MsgSrcAddr
 
+    # Retrieve device name from the IEEE address
     _ieee = self.ListOfDevices[MsgSrcAddr]["IEEE"]
-
     _name = next((self.Devices[x].Name for x in self.Devices if self.Devices[x].DeviceID == _ieee), None)
 
-    _durhh, _durmm, _durss = convert_time(self.ListInUpdate["intSize"] // MsgMaxDataSize)
+    # Estimate upload time
+    estimated_time_for_upload = ( self.ListInUpdate["intSize"] // MsgMaxDataSize )
+    if self.zigbee_communication == "zigpy":
+        estimated_time_for_upload //= 7
+
+    # Convert estimated time into hours, minutes, and seconds
+    _durhh, _durmm, _durss = convert_time(estimated_time_for_upload)
+
+    # Generate notification text
     _textmsg = "Firmware update started for Device: %s with %s - Estimated Time: %s H %s min %s sec " % (
-        _name,
-        self.ListInUpdate["FileName"],
-        _durhh,
-        _durmm,
-        _durss,
-    )
+        _name, self.ListInUpdate["FileName"], _durhh, _durmm, _durss, )
     self.adminWidgets.updateNotificationWidget(self.Devices, _textmsg)
 
 
