@@ -1,3 +1,15 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Implementation of Zigbee for Domoticz plugin.
+#
+# This file is part of Zigbee for Domoticz plugin. https://github.com/zigbeefordomoticz/Domoticz-Zigbee
+# (C) 2015-2024
+#
+# Initial authors: badz & pipiche38
+#
+# SPDX-License-Identifier:    GPL-3.0 license
+
 import sqlite3
 import json
 import base64
@@ -21,6 +33,7 @@ def decode_base64_to_dict(b64_data):
     except (base64.binascii.Error, UnicodeDecodeError, json.JSONDecodeError):
         print("Warning: Could not decode base64 or parse JSON")
         return {}
+
 
 def decode_configuration(config_str, main_attribut=None):
     """
@@ -70,6 +83,7 @@ def decode_configuration(config_str, main_attribut=None):
     except json.JSONDecodeError:
         print("Warning: Could not decode Configuration JSON")
         return {}
+
 
 def fetch_hardware_records(database_path, main_attribut=None):
     """
