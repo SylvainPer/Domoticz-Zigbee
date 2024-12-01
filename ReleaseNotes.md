@@ -18,6 +18,17 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## Dec. 2024 - stable7.1.015 (2024.07)
+
+- [Technical] - zigpy bellows lib upgrade to 73.1
+- [Technical] - refactor wait to compute number of devices
+
+- [Issue] - fix bad handling of Owon PC321 negative power.
+- [Issue] - fix a major issue on OTA preventing to have a proper upgrade trigger on the device.
+
+- [Hardware] - support of Aqara remote switch lumi.remote.acn004
+- [Hardware] - support of Tuya TS000F 4 Switch channel + Temp/Humidity
+
 ## Nov. 2024 - stable7.1.014 (2024.06)
 
 - [Technical] - Remove duplicate line in contraints.txt
