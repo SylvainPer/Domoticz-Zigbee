@@ -20,6 +20,7 @@ import time
 from Modules.tools import how_many_devices
 import distro
 import requests
+import socket
 
 # Matomo endpoint details
 MATOMO_URL = "https://z4d.pipiche.net/matomo.php"
@@ -154,7 +155,11 @@ def send_matomo_request(self, action_name, custom_variable=None, custom_dimensio
         event_action (str, optional): Action for the event (e.g., "Opt-Out").
         event_name (str, optional): Name of the event (e.g., "User Opted Out").
     """
-    
+
+    if socket.gethostname() == 'rasp':
+        self.log.logging( "Matomo", "Error", f"send_matomo_request - Development system, nothing to send to matomo {socket.gethostname()}")
+        return
+
     client_id = get_clientid(self)
     self.log.logging( "Matomo", "Debug", f"send_matomo_request - Clien_id {client_id}")
     if client_id is None:
