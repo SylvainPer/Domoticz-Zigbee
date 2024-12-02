@@ -63,8 +63,6 @@ def Decode8000_v2(self, Devices, MsgData, MsgLQI):
 def Decode8011(self, Devices, MsgData, MsgLQI, TransportInfos=None):
     self.log.logging('Input', 'Debug', 'Decode8011 - APS ACK: %s' % MsgData)
     MsgLen = len(MsgData)
-    if MsgLen > 6:
-        self.log.logging('Input', 'Error', f"Decode8011 - unexpected payload received {MsgData}")
     MsgStatus = MsgData[:2]
     MsgSrcAddr = MsgData[2:6]
 
