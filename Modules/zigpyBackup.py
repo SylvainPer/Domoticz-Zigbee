@@ -84,7 +84,7 @@ def handle_zigpy_retreive_last_backup( self ):
             is_timestamp_recent_than_filename(self, dz_latest_coordinator_backup_timestamp, _coordinator_backup) ))
 
         if file_latest_coordinator_backup_record != dz_latest_coordinator_backup_record:
-            self.log.logging("TransportZigpy", "Error", "==> Sanity check : Domoticz Coordinator Backup versus File Backup NOT equal!! Domoticz: {dz_latest_coordinator_backup_record}  {_coordinator_backup}: {file_latest_coordinator_backup_record}")
+            self.log.logging("TransportZigpy", "Error", f"==> Sanity check : Domoticz Coordinator Backup versus File Backup NOT equal!! Domoticz: {dz_latest_coordinator_backup_record}  {_coordinator_backup}: {file_latest_coordinator_backup_record}")
 
     # At that stage, we have loaded from Domoticz and from txt file.
     if dz_latest_coordinator_backup_record and self.pluginconf.pluginConf["useDomoticzDatabase"] and backup_domoticz_more_recent:
