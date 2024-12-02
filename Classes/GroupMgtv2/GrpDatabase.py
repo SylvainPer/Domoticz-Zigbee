@@ -64,18 +64,18 @@ def load_groups_list_from_json(self):
 
     # Load from Json
     txt_timestamp = 0
+    _json_grouplist = {}
     if os.path.isfile(self.GroupListFileName):
-        _json_grouplist = {}
         with open(self.GroupListFileName, "rt") as handle:
             _json_grouplist = json.load(handle)
             txt_timestamp = os.path.getmtime(self.GroupListFileName)
             self.logging( "Debug", "%s timestamp is %s" % (self.GroupListFileName, txt_timestamp))
-     
+
     # Check Loads
     if _domoticz_grouplist and _json_grouplist :
         self.logging( "Debug", "==> Sanity check : GroupList Loaded. %s entries from Domoticz, %s from Json, result: %s" % (
             len(_domoticz_grouplist), len(_json_grouplist), _domoticz_grouplist == _json_grouplist ))
-    
+
     if self.pluginconf.pluginConf["useDomoticzDatabase"] and dz_timestamp > txt_timestamp:
         # We should load the Domoticz file
         self.ListOfGroups = _domoticz_grouplist
