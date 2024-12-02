@@ -18,6 +18,10 @@ Release Numbering
 - Odd numbers --> Stable/7
 - Even numbers  --> Beta/7 (dev branch)
 
+## Dec. 2024 - stable7.1.016 (2024.08)
+
+- [Issue] - Important fix to detect non-functionning device, and setting then in Timeout (bug found on EZSP)
+
 ## Dec. 2024 - stable7.1.015 (2024.07)
 
 - [Technical] - zigpy bellows lib upgrade to 73.1
