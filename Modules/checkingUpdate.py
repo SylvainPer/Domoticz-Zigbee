@@ -39,15 +39,15 @@ def check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_
     Returns:
         tuple: Plugin version, firmware major version, firmware minor version.
     """
-    self.log.logging("Plugin", "Debug", f"check_plugin_version_against_dns {zigbee_communication} {branch} {zigate_model}")
+    self.log.logging("CheckUpdate", "Debug", f"check_plugin_version_against_dns {zigbee_communication} {branch} {zigate_model}")
 
     # Fetch and parse plugin version DNS record
     plugin_version = _fetch_and_parse_dns_record(self, PLUGIN_TXT_RECORD, "Plugin")
     if plugin_version is None:
-        self.log.logging("Plugin", "Error", "Unable to access plugin version. Is Internet access available?")
+        self.log.logging("CheckUpdate", "Error", "Unable to access plugin version. Is Internet access available?")
         return (0, 0, 0)
 
-    self.log.logging("Plugin", "Debug", f"     plugin version: >{plugin_version}")
+    self.log.logging("CheckUpdate", "Debug", f"     plugin version: >{plugin_version}")
 
     firmware_version_dict = {}
     if zigbee_communication == "native":
@@ -55,7 +55,7 @@ def check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_
         if firmware_version:
             firmware_version_dict = firmware_version
 
-    self.log.logging("Plugin", "Debug", f"     firmware version: >{firmware_version_dict}")
+    self.log.logging("CheckUpdate", "Debug", f"     firmware version: >{firmware_version_dict}")
     
     # Determine the response based on communication type and branch support
     if zigbee_communication == "native" and branch in plugin_version and "firmMajor" in firmware_version_dict and "firmMinor" in firmware_version_dict:
@@ -64,7 +64,7 @@ def check_plugin_version_against_dns(self, zigbee_communication, branch, zigate_
     if zigbee_communication == "zigpy" and branch in plugin_version:
         return (plugin_version[branch], 0, 0)
 
-    self.log.logging("Plugin", "Error", f"You are running on branch: {branch}, which is NOT SUPPORTED.")
+    self.log.logging("CheckUpdate", "Error", f"You are running on branch: {branch}, which is NOT SUPPORTED.")
     return (0, 0, 0)
 
 
@@ -80,19 +80,19 @@ def _fetch_and_parse_dns_record(self, record_name, record_type):
         dict or None: Parsed DNS record as a dictionary, or None if unavailable.
     """
     if not record_name:
-        self.log.logging(record_type, "Error", f"{record_type} DNS record not found.")
+        self.log.logging("CheckUpdate", "Error", f"{record_type} DNS record not found.")
         return None
 
-    self.log.logging(record_type, "Debug", f"Fetching {record_type} DNS record: {record_name}")
+    self.log.logging("CheckUpdate", "Debug", f"Fetching {record_type} DNS record: {record_name}")
     record = _get_dns_txt_record(self, record_name)
     if record is None:
-        self.log.logging(record_type, "Error", f"Failed to fetch {record_type} DNS record: {record_name}")
+        self.log.logging("CheckUpdate", "Error", f"Failed to fetch {record_type} DNS record: {record_name}")
         return None
 
-    self.log.logging(record_type, "Debug", f"Fetching {record_type} DNS record: {record_name} = {record}")
+    self.log.logging("CheckUpdate", "Debug", f"Fetching {record_type} DNS record: {record_name} = {record}")
 
     parsed_record = _parse_dns_txt_record(record)
-    self.log.logging(record_type, "Debug", f"Fetched and parsed {record_type} DNS record: {parsed_record}")
+    self.log.logging("CheckUpdate", "Debug", f"Fetched and parsed {record_type} DNS record: {parsed_record}")
     return parsed_record
 
 
@@ -108,7 +108,7 @@ def _get_dns_txt_record(self, record, timeout=1):
         str or None: The DNS TXT record as a string, or None if unavailable.
     """
     if not self.internet_available:
-        self.log.logging("Plugin", "Error", f"Internet unavailable, skipping DNS resolution for {record}")
+        self.log.logging("CheckUpdate", "Error", f"Internet unavailable, skipping DNS resolution for {record}")
         return None
 
     try:
@@ -139,7 +139,7 @@ def _handle_dns_error(self, message, fatal=False):
         message (str): The error message to log.
         fatal (bool): If True, set internet_available to False.
     """
-    self.log.logging("Plugin", "Error", message)
+    self.log.logging("CheckUpdate", "Error", message)
     if fatal:
         self.internet_available = False
 
@@ -167,7 +167,7 @@ def is_plugin_update_available(self, currentVersion, availVersion):
         return False
 
     if _is_newer_version(self, currentVersion, availVersion):
-        self.log.logging("Plugin", "Status", f"Zigbee4Domoticz plugin: upgrade available: {availVersion}")
+        self.log.logging("CheckUpdate", "Status", f"Zigbee4Domoticz plugin: upgrade available: {availVersion}")
         return True
     
     return False
@@ -193,12 +193,12 @@ def is_zigate_firmware_available(self, currentMajorVersion, currentFirmwareVersi
     if not (availfirmMinor and currentFirmwareVersion):
         return False
     if int(availfirmMinor, 16) > int(currentFirmwareVersion, 16):
-        self.log.logging("Plugin", "Status", "Zigate Firmware update available")
+        self.log.logging("CheckUpdate", "Status", "Zigate Firmware update available")
         return True
     return False
 
 
-def is_internet_available():
+def is_internet_available(self):
     """
     Check if the internet is available by sending a GET request to a reliable website.
 
@@ -220,5 +220,5 @@ def is_internet_available():
         return False
     except requests.RequestException as e:
         # Handle other request exceptions
-        print(f"Unexpected error while checking internet availability: {e}")
+        self.log.logging( "Plugin", "Status",f"Unexpected error while checking internet availability: {e}")
         return False
