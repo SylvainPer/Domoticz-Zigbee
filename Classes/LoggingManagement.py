@@ -290,7 +290,7 @@ def _is_to_be_logged(self, logType, module):
         if self.pluginconf.pluginConf[module]:
             return True
     else:
-        domoticz_error_api("%s debug module unknown %s" % (module, module))
+        domoticz_error_api("debug module unknown: %s" % (module))
         return True     
     return False
 
