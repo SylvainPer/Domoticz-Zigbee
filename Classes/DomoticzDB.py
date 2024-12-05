@@ -113,7 +113,7 @@ def open_and_read(self, url):
     :param url: The URL to open.
     :return: Response content or None if the request fails.
     """
-    self.logging("Log", f"Opening URL: {url}")
+    self.logging("Debug", f"Opening URL: {url}")
 
     # Set up SSL context if necessary
     ssl_context = None
@@ -124,7 +124,7 @@ def open_and_read(self, url):
 
     for retries in range(3, 0, -1):
         try:
-            self.logging("Log", f"Opening URL: {url} with SSL context: {ssl_context} and REQ_TIMEOUT timeout")
+            self.logging("Debug", f"Opening URL: {url} with SSL context: {ssl_context} and REQ_TIMEOUT timeout")
             with urllib.request.urlopen(url, context=ssl_context, timeout=REQ_TIMEOUT) as response:
                 return response.read()
 
@@ -174,7 +174,7 @@ def domoticz_request(self, url):
     
     # Open the URL with a 750ms timeout
     try:
-        self.logging("Status", f"Opening URL: {url} with SSL context: {ssl_context} and REQ_TIMEOUT timeout")
+        self.logging("Debug", f"Opening URL: {url} with SSL context: {ssl_context} and REQ_TIMEOUT timeout")
         with urllib.request.urlopen(request, context=ssl_context, timeout=REQ_TIMEOUT) as response:
             return response.read()
     except urllib.error.URLError as e:
