@@ -638,17 +638,37 @@ def set_poweron_afteroffon(self, key, OnOffMode=0xFF):
             del self.ListOfDevices[key]["Ep"][EPout]["0006"][attribute]
         return write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data, ackIsDisabled=True, )
 
-def handle_unknow_device( self, Nwkid):
-    # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
-    # Will request in the next hearbeat to for a IEEE request
+
+def handle_unknow_device(self, Nwkid):
+    """
+    Handles an unknown device by attempting to look up its IEEE address.
+
+    If an IEEE address is found for the given network ID (Nwkid), logs the result 
+    and removes the Nwkid from the unknown devices list. Otherwise, attempts to 
+    find a match for the Nwkid and ensures it is tracked for future processing.
+
+    Args:
+        Nwkid (str): The network ID of the device.
+
+    Returns:
+        None
+    """
+    # Attempt to lookup IEEE address for the given network ID
     ieee = lookupForIEEE(self, Nwkid, True)
     if ieee:
-        self.log.logging("Input", "Debug", "Found IEEE for short address: %s is %s" % (Nwkid, ieee))
+        self.log.logging("Input", "Debug", f"Found IEEE for short address: {Nwkid} is {ieee}")
+        
+        # Remove from UnknownDevices if present
         if Nwkid in self.UnknownDevices:
             self.UnknownDevices.remove(Nwkid)
     else:
+        # Try finding a matching IEEE for the Nwkid
         try_to_find_ieee_matching_nwkid(self, Nwkid)
-        self.UnknownDevices.append(Nwkid)
+        
+        # Add to UnknownDevices if not already present
+        if Nwkid not in self.UnknownDevices:
+            self.UnknownDevices.append(Nwkid)
+
 
 def try_to_find_ieee_matching_nwkid(self, nwkid):
 
