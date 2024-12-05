@@ -546,10 +546,11 @@ def _load_Settings(self):
 
     dz_timestamp = 0
     if is_domoticz_db_available(self):
-        _domoticz_pluginConf = getConfigItem(Key="PluginConf", Attribute="b64encoded")
-        if "TimeStamp" in _domoticz_pluginConf:
-            dz_timestamp = _domoticz_pluginConf["TimeStamp"]
-            _domoticz_pluginConf = _domoticz_pluginConf["b64encoded"]
+        configuration_entry_imported_from_Domoticz = getConfigItem(Key="PluginConf", Attribute="b64encoded")
+        dz_timestamp = configuration_entry_imported_from_Domoticz.get("TimeStamp", 0)
+        _domoticz_pluginConf = configuration_entry_imported_from_Domoticz.get( "b64encoded", {})
+
+        if dz_timestamp != 0:
             Domoticz.Log( "Plugin data loaded where saved on %s" % (time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime(dz_timestamp))) )
         if not isinstance(_domoticz_pluginConf, dict):
             _domoticz_pluginConf = {}
