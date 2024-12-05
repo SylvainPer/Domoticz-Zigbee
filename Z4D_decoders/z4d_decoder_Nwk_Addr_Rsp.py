@@ -58,7 +58,7 @@ def Decode8040(self, Devices, MsgData, MsgLQI):
         return
 
     if MsgIEEE in self.IEEE2NWK:
-        self.log.logging('Input', 'Log', 'Decode 8040 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect' % (MsgIEEE, MsgShortAddress))
+        self.log.logging('Input', 'Debug', 'Decode 8040 - Receive an IEEE: %s with a NwkId: %s, will try to reconnect' % (MsgIEEE, MsgShortAddress))
 
         if not DeviceExist(self, Devices, MsgShortAddress, MsgIEEE):
 
