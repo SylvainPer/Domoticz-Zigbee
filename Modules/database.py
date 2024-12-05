@@ -505,6 +505,7 @@ def checkDevices2LOD(self, Devices):
         if self.ListOfDevices[nwkid]["Status"] == "inDB":
             self.ListOfDevices[nwkid]["ConsistencyCheck"] = next(("ok" for dev in Devices if Devices[dev].DeviceID == self.ListOfDevices[nwkid]["IEEE"]), "not in DZ")
 
+
 def checkListOfDevice2Devices(self, Devices):
     for widget_idx, widget_info in self.ListOfDomoticzWidget.items():
         self.log.logging("Database", "Debug", f"checkListOfDevice2Devices - {widget_idx} {type(widget_idx)} - {widget_info} {type(widget_info)}")
@@ -907,7 +908,7 @@ def cleanup_table_entries( self):
                         break
                     idx += 1
  
-                    
+
 def profalux_fix_remote_device_model(self):
     
     for x in self.ListOfDevices:
@@ -950,7 +951,7 @@ def hack_ts0601(self, nwkid):
         return
     hack_ts0601_error(self, nwkid, model_name, manufacturer=manuf_name)
     
-        
+
 def hack_ts0601_error(self, nwkid, model, manufacturer=None):
     # Looks like we have a TS0601 and something wrong !!!
     self.log.logging("Tuya", "Error", "This device is not correctly configured, please contact us with the here after information")
@@ -966,7 +967,8 @@ def hack_ts0601_rename_model( self, nwkid, modelName, manufacturer_name):
     if self.ListOfDevices[ nwkid ][ 'Model' ] != suggested_model:
         self.log.logging("Tuya", "Status", "Z4D adjusts Model name from %s to %s" %( modelName, suggested_model))
         self.ListOfDevices[ nwkid ][ 'Model' ] = suggested_model
-        
+
+
 def cleanup_ota(self, nwkid):
     
     if "OTAUpgrade" not in self.ListOfDevices[ nwkid ]:
