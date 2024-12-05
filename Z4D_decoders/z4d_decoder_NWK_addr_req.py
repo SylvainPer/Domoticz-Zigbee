@@ -10,6 +10,8 @@
 #
 # SPDX-License-Identifier:    GPL-3.0 license
 
+import struct
+
 from Modules.sendZigateCommand import raw_APS_request
 
 
@@ -47,13 +49,13 @@ def Decode0040(self, Devices, MsgData, MsgLQI):
 
     # Prepare the payload based on the IEEE address
     if ieee == self.ControllerIEEE:
-        controller_ieee = f'{int(self.ControllerIEEE, 16):016x}'
-        controller_nwkid = f'{int(self.ControllerNWKID, 16):04x}'
+        controller_ieee = '%016x' % struct.unpack('Q', struct.pack('>Q', int(self.ControllerIEEE, 16)))[0]
+        controller_nwkid = '%04x' % struct.unpack('H', struct.pack('>H', int(self.ControllerNWKID, 16)))[0]
         status = '00'
         payload = sqn + status + controller_ieee + controller_nwkid + '00'
     elif ieee in self.IEEE2NWK:
-        device_ieee = f'{int(ieee, 16):016x}'
-        device_nwkid = f'{int(self.IEEE2NWK[ieee], 16):04x}'
+        device_ieee = '%016x' % struct.unpack('Q', struct.pack('>Q', int(ieee, 16)))[0]
+        device_nwkid = '%04x' % struct.unpack('H', struct.pack('>H', int(self.IEEE2NWK[ieee], 16)))[0]
         status = '00'
         payload = sqn + status + device_ieee + device_nwkid + '00'
     else:
